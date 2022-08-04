@@ -1,0 +1,9 @@
+04-08-2022_13-40-20
+
+Labeling method: mean
+Predicted sentiment: Sadness
+Train list:
+ ['result0001', 'story2']
+*************** Sadness *******************
+result0001
+An error occured: [Errno 2] No such file or directory: './Sadness_ML_input.csv'
