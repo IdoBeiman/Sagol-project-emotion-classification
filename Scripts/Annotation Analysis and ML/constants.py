@@ -25,4 +25,4 @@ Results_dir = f"{root}/Results"
 
 
 # path of full data files (output of 'create_ML_input)
-data_path = "./"
+data_path = "./Tokenized_data"
