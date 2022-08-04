@@ -4,7 +4,6 @@ Created on Mon May  3 14:05:39 2021
 
 @author: Tamara
 """
-
 import os
 import pandas as pd
 import matplotlib.pyplot  as plt
@@ -15,7 +14,8 @@ from constants import *
 def init_analysis():
     now = datetime.now()
     now_formatted = now.strftime("%d-%m-%Y_%H-%M-%S")
-    dest_dir = f"{Results_dir}/{now_formatted}"
+    project_root = os.path.dirname(os.path.dirname(__file__))
+    dest_dir = f"{project_root}/destination_folder/{now_formatted}"
     os.makedirs(dest_dir)
 
     ## init log file
