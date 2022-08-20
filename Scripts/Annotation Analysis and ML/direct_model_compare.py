@@ -51,8 +51,8 @@ class aModel:
         return new_model
 
     def fit_NN(self, train_df,show_progress=False, n_epochs=8):
-        y = train_df[LABALING_METHOD]
-        X = train_df.drop([LABALING_METHOD], axis=1)
+        y = train_df[predicted_sentiment]
+        X = train_df.drop([predicted_sentiment], axis=1)
         X = X.values.reshape(X.shape[0], 1, X.shape[1])
         model = self.init_model(X)
         history = []
@@ -67,8 +67,8 @@ class aModel:
     def predict_NN(self, test_df):
         predictions = list()
         for i in range(len(test_df)):
-            y = test_df[LABALING_METHOD]
-            X =  test_df.drop([LABALING_METHOD], axis=1).loc[i]
+            y = test_df[predicted_sentiment]
+            X =  test_df.drop([predicted_sentiment], axis=1).loc[i]
             yhat = forecast_lstm(self.model, 1, X)
             predictions.append(yhat.item())
 
@@ -78,7 +78,7 @@ class aModel:
         return sqrt(mean_squared_error(y, self.predictions))
 
     def fit_baseline(self,train_df):
-        mode = train_df[LABALING_METHOD].mode().loc[0]
+        mode = train_df[predicted_sentiment].mode().loc[0]
         self.model = mode
 
     def predict_baseline(self, test_df):
@@ -86,20 +86,20 @@ class aModel:
 
     def fit_bayesRidge(self, train_df):
         model = linear_model.BayesianRidge(normalize = True)
-        y = train_df[LABALING_METHOD]
-        X = train_df.drop([LABALING_METHOD], axis=1)
+        y = train_df[predicted_sentiment]
+        X = train_df.drop([predicted_sentiment], axis=1)
 
         self.model = model.fit(X, y)
 
     def predict_bayesRidge(self, test_df):
-        BRPrediction = self.model.predict(test_df.drop([LABALING_METHOD], axis=1))
+        BRPrediction = self.model.predict(test_df.drop([predicted_sentiment], axis=1))
         self.predictions = BRPrediction
 
 
 def run():
     log,dest =init_analysis()
     #sents = ["sadness", "control","excitment","unpleasantness" ]
-    sents = [prdicted_sentiment]
+    sents = [predicted_sentiment]
     try:
         for s in sents:
             tmp_Results_dir = f"{dest}/{s}"
@@ -121,9 +121,11 @@ def run():
                 print_and_log(log,f"{test_pod}")
     
                 train_df, test_df = get_train_test_df(test_pod,sentiment=s)
-                
+                # test_df.to_csv("test.csv")
+                # train_df.to_csv("train.csv")
+
                 predictions = pd.DataFrame()
-                predictions['Real']= test_df[LABALING_METHOD]
+                predictions['Real']= test_df[s]
     
                 Linear.fit_bayesRidge(train_df)
                 Linear.predict_bayesRidge(test_df)
@@ -140,7 +142,7 @@ def run():
                 row = {'Story':test_pod}
                 for model in aModel.models:
                     print_and_log(log, f"{model.__dict__}")
-                    row[model.name] = model.calculate_error(test_df[LABALING_METHOD])
+                    row[model.name] = model.calculate_error(test_df[s])
                     predictions[model.name] = model.predictions
     
                 rmses = rmses.append(row, ignore_index=True)

@@ -5,11 +5,20 @@ Created on Mon May  3 14:05:39 2021
 @author: Tamara
 """
 import os
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot  as plt
 import seaborn as sns
 from datetime import datetime
 from constants import *
+
+def filter_rows_without_sent_and_split_train_test(df):
+    df = df.dropna(subset=[predicted_sentiment])
+    df['split'] = np.random.randn(df.shape[0], 1)
+    msk = np.random.rand(len(df)) <= 0.7
+    train = df[msk]
+    test = df[~msk]
+    return train, test
 
 def init_analysis():
     now = datetime.now()
@@ -22,7 +31,7 @@ def init_analysis():
     log = open(f"{dest_dir}/running_log.txt", "w+")
     log.write(now.strftime("%d-%m-%Y_%H-%M-%S")+"\n\n")
     log.write(f"Labeling method: {LABALING_METHOD}\n")
-    log.write(f"Predicted sentiment: {prdicted_sentiment}\n")
+    log.write(f"Predicted sentiment: {predicted_sentiment}\n")
     log.write(f"Train list:\n {podasts_for_train}\n")
     return log, dest_dir
 
@@ -31,11 +40,12 @@ def print_and_log(log, text):
     print(text)
     log.write(text+"\n")
 
-def get_feat_and_label_per_pod(pod,sentiment):
+def get_feat_and_label_per_pod(sentiment):
     full_df = pd.read_csv(os.path.join(data_path,f"{sentiment}_ML_input.csv"))
-    pod_full = full_df[full_df["audio_name"] == pod]
-    pod_col_names = [LABALING_METHOD] + feat_vec
-    return pod_full[pod_col_names]
+    pod_train, pod_test=filter_rows_without_sent_and_split_train_test(full_df)
+    # pod_full = full_df[full_df["audio_name"] == pod]
+    pod_col_names = [predicted_sentiment] + feat_vec
+    return pod_train[pod_col_names], pod_test[pod_col_names]
 
 def forecast_lstm(model, batch_size, X):
     """ make a one-step forecast.
@@ -46,17 +56,18 @@ def forecast_lstm(model, batch_size, X):
     return yhat[0,0]
 
 
-def get_train_test_df(test_pod,sentiment=prdicted_sentiment):
-    train_pods = [p for p in podasts_for_train if p!=test_pod]
-    train_df = pd.DataFrame()
-    test_df = pd.DataFrame()
-    for pod in podasts_for_train: 
-        print(pod)
-        if (pod==test_pod):
-            test_df = get_feat_and_label_per_pod(pod,sentiment)
-        else:
-            df = get_feat_and_label_per_pod(pod,sentiment)
-            train_df = pd.concat([train_df, df])
+def get_train_test_df(test_pod,sentiment=predicted_sentiment):
+    # train_pods = [p for p in podasts_for_train if p!=test_pod]
+    # train_df = pd.DataFrame()
+    # test_df = pd.DataFrame()
+    train_df, test_df = get_feat_and_label_per_pod(sentiment)
+    # for pod in podasts_for_train: 
+    #     print(pod)
+    #     if (pod==test_pod):
+    #         test_df = get_feat_and_label_per_pod(pod,sentiment)
+    #     else:
+    #         df = get_feat_and_label_per_pod(pod,sentiment)
+    #         train_df = pd.concat([train_df, df])
     test_df = test_df.reset_index()
     train_df = train_df.reset_index()
     test_df.drop(["index"], axis=1, inplace=True)
