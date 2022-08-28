@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Mon May  3 14:05:39 2021
-
-@author: Tamara
-"""
 import os
 import numpy as np
 import pandas as pd
+from os import listdir
 import matplotlib.pyplot  as plt
 import seaborn as sns
 from datetime import datetime
@@ -40,10 +36,9 @@ def print_and_log(log, text):
     print(text)
     log.write(text+"\n")
 
-def get_feat_and_label_per_pod(sentiment):
-    full_df = pd.read_csv(os.path.join(data_path,f"{sentiment}_ML_input.csv"))
+def get_feat_and_label_per_pod(test_pod):
+    full_df = pd.read_csv(os.path.join(data_path,f"{test_pod}"))
     pod_train, pod_test=filter_rows_without_sent_and_split_train_test(full_df)
-    # pod_full = full_df[full_df["audio_name"] == pod]
     pod_col_names = [predicted_sentiment] + feat_vec
     return pod_train[pod_col_names], pod_test[pod_col_names]
 
@@ -55,19 +50,13 @@ def forecast_lstm(model, batch_size, X):
     yhat = model.predict(X, batch_size=batch_size)
     return yhat[0,0]
 
+def get_podcasts_from_folder():
+    all_files = listdir(data_path)    
+    csv_files = list(filter(lambda f: f.endswith('.csv'), all_files))
+    return csv_files
 
 def get_train_test_df(test_pod,sentiment=predicted_sentiment):
-    # train_pods = [p for p in podasts_for_train if p!=test_pod]
-    # train_df = pd.DataFrame()
-    # test_df = pd.DataFrame()
-    train_df, test_df = get_feat_and_label_per_pod(sentiment)
-    # for pod in podasts_for_train: 
-    #     print(pod)
-    #     if (pod==test_pod):
-    #         test_df = get_feat_and_label_per_pod(pod,sentiment)
-    #     else:
-    #         df = get_feat_and_label_per_pod(pod,sentiment)
-    #         train_df = pd.concat([train_df, df])
+    train_df, test_df = get_feat_and_label_per_pod(test_pod)
     test_df = test_df.reset_index()
     train_df = train_df.reset_index()
     test_df.drop(["index"], axis=1, inplace=True)
@@ -96,39 +85,38 @@ def plot_model_comparison(predictions_dir):
     print(results.std(axis = 0))
     
     return
-
-def plot_predictions(predictions_dir):
+def trim_file_extension(filename):
+    return filename.split(".")[0]
+def plot_predictions(prediction_file_name, result_dir):
     sns.set()
     sns.set_theme(style="whitegrid", font="Times New Roman")
     sns.color_palette("bright")
     
-    for pod in podasts_for_train:
+    results = pd.read_csv(prediction_file_name)
+    y = results['Real']
+    results.drop(['Unnamed: 0','Real'],axis=1,inplace=True)
+    models = [m for m in results.columns if m!="BL"]
     
-        results = pd.read_csv(f"{predictions_dir}/{pod}_model_predictions.csv")
-        y = results['Real']
-        results.drop(['Unnamed: 0','Real'],axis=1,inplace=True)
-        models = [m for m in results.columns if m!="BL"]
+    fig,a =  plt.subplots(2,2,figsize=(15, 5),gridspec_kw={'hspace': 0.1, 'wspace': 0.1})
+    sns.despine(left=True, bottom=True)
+    fig.suptitle(f'{prediction_file_name}')
+    i = 0
+    for ax in a.ravel():
+        l1=ax.plot(y,label = "real labels")[0]
+        l3=ax.plot(results['BL'],label='BL')[0]
+        l2=ax.plot(results[models[i]],label=models[i])
         
-        fig,a =  plt.subplots(2,2,figsize=(15, 5),gridspec_kw={'hspace': 0.1, 'wspace': 0.1})
-        sns.despine(left=True, bottom=True)
-        fig.suptitle(f'{pod}')
-        i = 0
-        for ax in a.ravel():
-            l1=ax.plot(y,label = "real labels")[0]
-            l3=ax.plot(results['BL'],label='BL')[0]
-            l2=ax.plot(results[models[i]],label=models[i])
-            
-            #ax.legend(fontsize=8)
-            ax.set_ylim([0.5, 5.5]) 
-            ax.set_title(f'{models[i]}')
-            i+=1
+        #ax.legend(fontsize=8)
+        ax.set_ylim([0.5, 5.5]) 
+        ax.set_title(f'{models[i]}')
+        i+=1
+    
+    # Create the legend
+    fig.legend([l1, l3,l2],     # The line objects
+                labels=['Real','BL','Model for comparison'],   # The labels for each line
+                loc="lower center", ncol=3)
+    
+    for axi in fig.get_axes():
+        axi.label_outer()
         
-        # Create the legend
-        fig.legend([l1, l3,l2],     # The line objects
-                   labels=['Real','BL','Model for comparison'],   # The labels for each line
-                   loc="lower center", ncol=3)
-        
-        for axi in fig.get_axes():
-            axi.label_outer()
-            
-        fig.savefig(f"{predictions_dir}/{pod}_predictions.png")
+    fig.savefig(f"{result_dir}/predictions.png")

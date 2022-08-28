@@ -15,7 +15,6 @@ all_podcasts = ['train_activations_layer_8_sub005_operation_last_word_origin_ful
 podasts_for_train = all_podcasts
 
 
-#root dir (C:\Users\Tamara\Downloads\seminar_scripts\scripts)
 root = os.path.join(os.getcwd(),"\debug") 
 
 # results dir

@@ -70,6 +70,8 @@ class aModel:
             y = test_df[predicted_sentiment]
             X =  test_df.drop([predicted_sentiment], axis=1).loc[i]
             yhat = forecast_lstm(self.model, 1, X)
+            if yhat is None:
+                print ("none")
             predictions.append(yhat.item())
 
         self.predictions=predictions
@@ -90,68 +92,80 @@ class aModel:
         X = train_df.drop([predicted_sentiment], axis=1)
 
         self.model = model.fit(X, y)
+        
+    def fit_elastic(self, train_df):
+        model = linear_model.ElasticNet(normalize = True)
+        y = train_df[predicted_sentiment]
+        X = train_df.drop([predicted_sentiment], axis=1)
+
+        self.model = model.fit(X, y)
 
     def predict_bayesRidge(self, test_df):
         BRPrediction = self.model.predict(test_df.drop([predicted_sentiment], axis=1))
         self.predictions = BRPrediction
+    def predict_elastic(self, test_df):
+        elasticPrediction = self.model.predict(test_df.drop([predicted_sentiment], axis=1))
+        self.predictions = elasticPrediction
 
+def extract_details_from_file_name(filename):
+    layer = filename.split("sub")[0].split("activations")[1].replace("_","")
+    operation = filename.split("operation")[1].split("origin")[0].replace("_","")
+    return operation+layer
 
 def run():
-    log,dest =init_analysis()
     #sents = ["sadness", "control","excitment","unpleasantness" ]
     sents = [predicted_sentiment]
+    log,dest =init_analysis()
     try:
-        for s in sents:
-            tmp_Results_dir = f"{dest}/{s}"
-            os.makedirs(tmp_Results_dir)
-    
-            print_and_log(log,f"*************** {s} *******************")
-    
-            n_epochs = 8
-    
-            SNN   = aModel(n1=128,n2=64,d_o=0.6,ac_func="tanh",model_type='dense', name='SNN')
-            uniLSTM = aModel(n1=32,n2=20,d_o=0.3,ac_func="sigmoid",model_type='uniLSTM',name='uLSTM')
-            BiLSTM  = aModel(n1=16,n2=16,d_o=0.4,ac_func="sigmoid",model_type='BiLSTM',name='BiLSTM')
-            Linear = aModel(name="Linear")
-            Baseline = aModel(name='BL')
-            nn_models = [SNN,uniLSTM, BiLSTM]
-            rmses = pd.DataFrame(columns=aModel.get_models_names())
-    
-            for test_pod in podasts_for_train:
+        rmses = pd.DataFrame(columns=aModel.get_models_names())
+        for test_pod in get_podcasts_from_folder():
+            for s in sents:
+                tmp_Results_dir = f"{dest}/{s}/{extract_details_from_file_name(test_pod)}"
+                os.makedirs(tmp_Results_dir)
+        
+                print_and_log(log,f"*************** {s} *******************")
+        
+                n_epochs = 8
+                aModel.models =[]
+                SNN   = aModel(n1=128,n2=64,d_o=0.6,ac_func="tanh",model_type='dense', name='SNN')
+                uniLSTM = aModel(n1=32,n2=20,d_o=0.3,ac_func="sigmoid",model_type='uniLSTM',name='uLSTM')
+                BiLSTM  = aModel(n1=16,n2=16,d_o=0.4,ac_func="sigmoid",model_type='BiLSTM',name='BiLSTM')
+                Linear = aModel(name="Linear")
+                Baseline = aModel(name='BL')
+                nn_models = [SNN,uniLSTM, BiLSTM]
+        
                 print_and_log(log,f"{test_pod}")
-    
+
                 train_df, test_df = get_train_test_df(test_pod,sentiment=s)
-                # test_df.to_csv("test.csv")
-                # train_df.to_csv("train.csv")
 
                 predictions = pd.DataFrame()
                 predictions['Real']= test_df[s]
-    
-                Linear.fit_bayesRidge(train_df)
-                Linear.predict_bayesRidge(test_df)
-    
+
+                Linear.fit_elastic(train_df)
+                Linear.predict_elastic(test_df)
+
                 Baseline.fit_baseline(train_df)
                 Baseline.predict_baseline(test_df)
-    
-    
+
+
                 for m in nn_models:
                     print(m.name)
                     m.fit_NN(train_df)
                     m.predict_NN(test_df)
-    
+
                 row = {'Story':test_pod}
                 for model in aModel.models:
                     print_and_log(log, f"{model.__dict__}")
                     row[model.name] = model.calculate_error(test_df[s])
                     predictions[model.name] = model.predictions
-    
+
                 rmses = rmses.append(row, ignore_index=True)
-    
-                predictions.to_csv(f"{tmp_Results_dir}/{test_pod}_model_predictions.csv", mode='w', header=True)
-    
-            rmses.to_csv(f"{tmp_Results_dir}/direct_model_comparison.csv", mode='w', header=True)
-            plot_model_comparison(tmp_Results_dir)
-            plot_predictions(tmp_Results_dir)
+                predictionsFileName = f"{tmp_Results_dir}/{trim_file_extension(test_pod)}_model_predictions.csv"
+                predictions.to_csv(predictionsFileName, mode='w', header=True)
+        
+                rmses.to_csv(f"{tmp_Results_dir}/direct_model_comparison.csv", mode='w', header=True)
+                # plot_model_comparison(tmp_Results_dir)
+                # plot_predictions(predictionsFileName,tmp_Results_dir)
 
     except Exception as e:
         print_and_log(log,f'An error occured: {e}')
