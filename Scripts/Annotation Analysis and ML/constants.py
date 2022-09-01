@@ -1,5 +1,4 @@
 
-# "avg" / "bin" / "avg_diff"
 import os
 
 # names of all the features in the full data dataframe
