@@ -20,8 +20,5 @@ root = os.path.join(os.getcwd(),"\debug")
 # results dir
 Results_dir = f"{root}/Results"
 
-#embeddind_dir = f"{root}/embeddings_last_layer" 
-
-
 # path of full data files (output of 'create_ML_input)
 data_path = "./Tokenized_data"
