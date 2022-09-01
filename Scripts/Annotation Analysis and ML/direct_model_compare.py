@@ -13,9 +13,9 @@ def run():
     log,dest =init_analysis()
     try:
         rmses = pd.DataFrame(columns=MLmodel.get_models_names())
-        tmp_Results_dir = f"{dest}/{s}" # one folder for all of the tests
+        tmp_Results_dir = f"{dest}/{predicted_sentiment}" # one folder for all of the tests
         os.makedirs(tmp_Results_dir)
-        for test_pod in get_podcasts_from_folder():
+        for podcast in get_podcasts_from_folder():
             for s in sents:
                 print_and_log(log,f"*************** {s} *******************")
     
@@ -28,34 +28,35 @@ def run():
                 Baseline = MLmodel(name='BL')
                 nn_models = [SNN,uniLSTM, BiLSTM,SNNrelu]
         
-                print_and_log(log,f"{test_pod}")
+                print_and_log(log,f"{podcast}")
 
-                train_df, test_df = get_train_test_df(test_pod,sentiment=s)
+                for train_indexes, test_indexes in split_data_using_cross_validation(podcast):
+                    train_split_df = podcast[train_indexes]
+                    test_split_df = podcast[test_indexes]
+                    predictions = pd.DataFrame()
+                    predictions['Real']= test_split_df[s]
 
-                predictions = pd.DataFrame()
-                predictions['Real']= test_df[s]
+                    Linear.fit_elastic(train_split_df)
+                    Linear.predict_elastic(test_split_df)
 
-                Linear.fit_elastic(train_df)
-                Linear.predict_elastic(test_df)
-
-                Baseline.fit_baseline(train_df)
-                Baseline.predict_baseline(test_df)
+                    Baseline.fit_baseline(train_split_df)
+                    Baseline.predict_baseline(test_split_df)
 
 
-                for m in nn_models:
-                    print(m.name)
-                    m.fit_NN(train_df)
-                    m.predict_NN(test_df)
+                    for m in nn_models:
+                        print(m.name)
+                        m.fit_NN(train_split_df)
+                        m.predict_NN(test_split_df)
 
-                row = {'Story':extract_details_from_file_name(test_pod)}
-                for model in MLmodel.models:
-                    print_and_log(log, f"{model.__dict__}")
-                    row[model.name] = model.calculate_error(test_df[s])
-                    predictions[model.name] = model.predictions
+                    row = {'Story':extract_details_from_file_name(podcast)}
+                    for model in MLmodel.models:
+                        print_and_log(log, f"{model.__dict__}")
+                        row[model.name] = model.calculate_error(test_split_df[s])
+                        predictions[model.name] = model.predictions
 
-                rmses = rmses.append(row, ignore_index=True)
-                predictionsFileName = f"{tmp_Results_dir}/{trim_file_extension(test_pod)}_model_predictions.csv"
-                predictions.to_csv(predictionsFileName, mode='w', header=True)
+                    rmses = rmses.append(row, ignore_index=True)
+                    predictionsFileName = f"{tmp_Results_dir}/{trim_file_extension(podcast)}_model_predictions.csv"
+                    predictions.to_csv(predictionsFileName, mode='w', header=True)
         
                 # plot_model_comparison(tmp_Results_dir)
                 # plot_predictions(predictionsFileName,tmp_Results_dir)

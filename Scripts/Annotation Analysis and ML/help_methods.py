@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 from os import listdir
 import matplotlib.pyplot  as plt
+from sklearn.model_selection import LeaveOneOut
+from sklearn.metrics import accuracy_score
 import seaborn as sns
 from datetime import datetime
 from constants import *
@@ -14,7 +16,9 @@ def filter_rows_without_sent_and_split_train_test(df):
     train = df[msk]
     test = df[~msk]
     return train, test
-
+def split_data_using_cross_validation(df):
+    loo = LeaveOneOut()
+    return loo.split(df)
 def init_analysis():
     now = datetime.now()
     now_formatted = now.strftime("%d-%m-%Y_%H-%M-%S")
@@ -83,6 +87,9 @@ def plot_model_comparison(predictions_dir):
     print(results.std(axis = 0))
     
     return
+def calcualte_model_accuracy (real_values, predictions ):
+    acc = accuracy_score(real_values,predictions)
+
 def trim_file_extension(filename):
     return filename.split(".")[0]
 def plot_predictions(prediction_file_name, result_dir):
