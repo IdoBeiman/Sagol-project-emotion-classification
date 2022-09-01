@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import os
 import numpy as np
 import pandas as pd
@@ -26,7 +25,6 @@ def init_analysis():
     ## init log file
     log = open(f"{dest_dir}/running_log.txt", "w+")
     log.write(now.strftime("%d-%m-%Y_%H-%M-%S")+"\n\n")
-    log.write(f"Labeling method: {LABALING_METHOD}\n")
     log.write(f"Predicted sentiment: {predicted_sentiment}\n")
     log.write(f"Train list:\n {podasts_for_train}\n")
     return log, dest_dir

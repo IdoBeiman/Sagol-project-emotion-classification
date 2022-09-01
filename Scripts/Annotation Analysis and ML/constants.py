@@ -2,9 +2,6 @@
 # "avg" / "bin" / "avg_diff"
 import os
 
-
-LABALING_METHOD = "mean"
-
 # names of all the features in the full data dataframe
 feat_vec = [str(i) for i in range(0, 768)]
 
