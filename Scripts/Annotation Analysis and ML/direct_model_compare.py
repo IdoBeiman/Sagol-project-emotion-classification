@@ -13,13 +13,12 @@ def run():
     log,dest =init_analysis()
     try:
         rmses = pd.DataFrame(columns=MLmodel.get_models_names())
+        tmp_Results_dir = f"{dest}/{s}" # one folder for all of the tests
+        os.makedirs(tmp_Results_dir)
         for test_pod in get_podcasts_from_folder():
             for s in sents:
-                tmp_Results_dir = f"{dest}/{s}/{extract_details_from_file_name(test_pod)}"
-                os.makedirs(tmp_Results_dir)
-        
                 print_and_log(log,f"*************** {s} *******************")
-        
+    
                 MLmodel.models =[]
                 SNN   = MLmodel(n1=128,n2=64,d_o=0.6,ac_func="tanh",model_type='dense', name='SNNtanh')
                 SNNrelu   = MLmodel(n1=128,n2=64,d_o=0.6,ac_func="relu",model_type='dense', name='SNNRelu')
@@ -48,7 +47,7 @@ def run():
                     m.fit_NN(train_df)
                     m.predict_NN(test_df)
 
-                row = {'Story':test_pod}
+                row = {'Story':extract_details_from_file_name(test_pod)}
                 for model in MLmodel.models:
                     print_and_log(log, f"{model.__dict__}")
                     row[model.name] = model.calculate_error(test_df[s])
@@ -58,10 +57,9 @@ def run():
                 predictionsFileName = f"{tmp_Results_dir}/{trim_file_extension(test_pod)}_model_predictions.csv"
                 predictions.to_csv(predictionsFileName, mode='w', header=True)
         
-                rmses.to_csv(f"{tmp_Results_dir}/direct_model_comparison.csv", mode='w', header=True)
                 # plot_model_comparison(tmp_Results_dir)
                 # plot_predictions(predictionsFileName,tmp_Results_dir)
-
+        rmses.to_csv(f"{tmp_Results_dir}/all_models_comparison.csv", mode='w', header=True) # merged csv for all of the models
     except Exception as e:
         print_and_log(log,f'An error occured: {e}')
     finally:
