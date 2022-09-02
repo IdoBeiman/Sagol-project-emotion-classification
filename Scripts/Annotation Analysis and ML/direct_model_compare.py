@@ -15,10 +15,10 @@ def run():
     log,dest =init_analysis()
     try:
         rmses = pd.DataFrame(columns=MLmodel.get_models_names())
-        total_predictions_df=pd.DataFrame()
         tmp_Results_dir = f"{dest}/{predicted_sentiment}" # one folder for all of the tests
         os.makedirs(tmp_Results_dir)
         for podcast in get_podcasts_from_folder():
+            total_predictions_df=pd.DataFrame()
             podcast_df = process_tokens_dataframe(podcast,sents=sents)
             for s in sents:
                 print_and_log(log,f"*************** {s} *******************")
@@ -42,8 +42,7 @@ def run():
                     test_split_df = podcast_df.iloc[test_indexes]
                     train_split_df,test_split_df = post_split_process(train_split_df,test_split_df,s)
                     
-                    predictions = pd.DataFrame()
-                    predictions['Real'+ "_"+str(current_iteration)+" iteration"]= test_split_df[s]
+                    total_predictions_df['Real'+ "_"+str(current_iteration)+" iteration"]= test_split_df[s]
                     Linear.fit_elastic(train_split_df)
                     Linear.predict_elastic(test_split_df)
 
@@ -63,10 +62,9 @@ def run():
                         else:
                             accumulatedData[model.name]=0
                             accumulatedData[model.name] += model.calculate_error(test_split_df[s])
-                        predictions[model.name+"_"+str(current_iteration)+" iteration"] = model.predictions
+                        total_predictions_df[model.name+"_"+" iteration_"+str(current_iteration)] = pd.Series(model.predictions)
                     current_iteration +=1
-                total_predictions_df.append(predictions)
-                for model in MLmodel.models:
+                for model in MLmodel.models: # after we finished the cross validation iterations we will divide the accumlated error by the number of iterations
                     row[model.name] =  accumulatedData[model.name]/iterations
                 rmses = rmses.append(row, ignore_index=True)
                 predictionsFileName = f"{tmp_Results_dir}/{trim_file_extension(podcast)}_model_predictions.csv"
@@ -74,7 +72,7 @@ def run():
         
                 # plot_model_comparison(tmp_Results_dir)
                 # plot_predictions(predictionsFileName,tmp_Results_dir)
-        rmses.to_csv(f"{tmp_Results_dir}/all_models_comparison.csv", mode='w', header=True) # merged csv for all of the models
+        rmses.to_csv(f"{tmp_Results_dir}/all_models_comparison.csv", mode='w', header=True) # merged csv for all of the podcasts
     except Exception as e:
         print_and_log(log,f'An error occured: {e}')
     finally:
