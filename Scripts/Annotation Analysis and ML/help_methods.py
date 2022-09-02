@@ -3,22 +3,28 @@ import numpy as np
 import pandas as pd
 from os import listdir
 import matplotlib.pyplot  as plt
-from sklearn.model_selection import LeaveOneOut
+from sklearn.model_selection import LeaveOneGroupOut
 from sklearn.metrics import accuracy_score
 import seaborn as sns
 from datetime import datetime
 from constants import *
 
-def filter_rows_without_sent_and_split_train_test(df):
-    df = df.dropna(subset=[predicted_sentiment])
-    df['split'] = np.random.randn(df.shape[0], 1)
-    msk = np.random.rand(len(df)) <= 0.7
-    train = df[msk]
-    test = df[~msk]
-    return train, test
-def split_data_using_cross_validation(df):
-    loo = LeaveOneOut()
-    return loo.split(df)
+def process_tokens_dataframe(file_path, sents):
+    df = pd.read_csv(os.path.join(data_path,f"{file_path}"),index_col=0)
+    filtered_df = df[df[sents].notnull().all(1)] # right now it checks that all the sentiments exist - will be changed to check that any of them exists
+    return filtered_df
+
+def split_data_using_cross_validation(df, sentitment):
+    groups = df["episodeName"].to_numpy()
+    logo = LeaveOneGroupOut()
+    return logo.split(df, df[sentitment],groups=groups)
+
+def get_num_splits(df):
+    groups = df["episodeName"].to_numpy()
+    logo = LeaveOneGroupOut()
+    iterations = logo.get_n_splits(groups=groups)
+    return iterations
+
 def init_analysis():
     now = datetime.now()
     now_formatted = now.strftime("%d-%m-%Y_%H-%M-%S")
@@ -38,11 +44,6 @@ def print_and_log(log, text):
     print(text)
     log.write(text+"\n")
 
-def get_feat_and_label_per_pod(test_pod):
-    full_df = pd.read_csv(os.path.join(data_path,f"{test_pod}"))
-    pod_train, pod_test=filter_rows_without_sent_and_split_train_test(full_df)
-    pod_col_names = [predicted_sentiment] + feat_vec
-    return pod_train[pod_col_names], pod_test[pod_col_names]
 
 def forecast_lstm(model, batch_size, X):
     """ make a one-step forecast.
@@ -57,13 +58,6 @@ def get_podcasts_from_folder():
     csv_files = list(filter(lambda f: f.endswith('.csv'), all_files))
     return csv_files
 
-def get_train_test_df(test_pod,sentiment=predicted_sentiment):
-    train_df, test_df = get_feat_and_label_per_pod(test_pod)
-    test_df = test_df.reset_index()
-    train_df = train_df.reset_index()
-    test_df.drop(["index"], axis=1, inplace=True)
-    train_df.drop(["index"], axis=1, inplace=True)
-    return train_df, test_df
 
 def plot_model_comparison(predictions_dir):
     results = pd.read_csv(f"{predictions_dir}/direct_model_comparison.csv")
@@ -92,6 +86,19 @@ def calcualte_model_accuracy (real_values, predictions ):
 
 def trim_file_extension(filename):
     return filename.split(".")[0]
+    
+def post_split_process(train_df, test_df,sentiment):
+    test_df.drop(["episodeName"], axis=1, inplace=True)
+    test_df.reset_index(drop=True, inplace=True)
+    train_df.drop(["episodeName"], axis=1, inplace=True)
+    train_df.reset_index(drop=True, inplace=True)
+    to_remove = all_emotions
+    if sentiment in to_remove:
+        to_remove.remove(sentiment)
+    train_df.drop([col for col in train_df.columns if   col in to_remove], axis=1, inplace=True)
+    test_df.drop([col for col in test_df.columns if col in to_remove ], axis=1, inplace=True)
+
+    return train_df,test_df
 def plot_predictions(prediction_file_name, result_dir):
     sns.set()
     sns.set_theme(style="whitegrid", font="Times New Roman")
