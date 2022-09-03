@@ -127,3 +127,12 @@ def create_model_for_grid_dense(dropout_rate,activation,weight_constraint,optimi
     else:
         model.compile(loss="mean_squared_error", optimizer=optimizer,metrics=[rmse])
         return model
+def create_model_for_grid_uniLSTM(dropout_rate,activation,input_shape_dim1,input_shape_dim2):
+	# create model
+    model = Sequential()
+    model.add(LSTM(32, stateful=True, return_sequences=True, activation=activation,batch_input_shape=(1, input_shape_dim1,input_shape_dim2)))
+    model.add(Dropout(dropout_rate))
+    model.add(LSTM(20, stateful=True, return_sequences=True, activation=activation))
+    model.add(Dense(1))
+    model.compile(loss="mean_squared_error", optimizer="adam",metrics=[rmse])
+    return model

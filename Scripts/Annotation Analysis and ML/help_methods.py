@@ -45,10 +45,12 @@ def get_num_splits(df):
 def get_grid_params(model_type):
     if model_type == "":
         return None
-    elif model_type == "uniLSTM" or model_type == "dense" or model_type == "BiLSTM":
+    elif model_type == "dense" or model_type == "BiLSTM":
         return {'model__optimizer':['adam', 'sgd'], 'model__initializer': ['normal', 'uniform'],'model__activation' : ["sigmoid","tanh","relu"],'model__dropout_rate':[0.2,0.3,0.4,0.5,0.6,0.7],'model__weight_constraint' : [1.0,2.0,3.0,4.0]}
+    elif model_type == "uniLSTM":
+        return {'model__activation' : ["sigmoid","tanh","relu"],'model__dropout_rate':[0.2,0.3,0.4,0.5,0.6,0.7]}
 def get_grid__optimizer_params(model_type):
-    if model_type == "":
+    if model_type == "uniLSTM":
         return None
     elif model_type == "uniLSTM" or model_type == "dense" or model_type == "BiLSTM":
         return {'model__optimizer':['adam', 'sgd'],'optimizer__learning_rate':[0.001, 0.01, 0.1, 0.2, 0.3], 'optimizer__decay':[0.0, 0.2, 0.4, 0.6, 0.8, 0.9]}
