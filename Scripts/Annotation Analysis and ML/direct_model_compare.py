@@ -28,7 +28,8 @@ def run():
                 for model_type in model_types:
                     if model_type == "dense":
                         grid_params=get_optimal_model_params(pre_processed_df,s,model_type)
-                        SNN = MLmodel(n1=128,n2=64,d_o=grid_params["model__dropout_rate"],ac_func=grid_params["model__activation"], weight_constraint=grid_params["model__weight_constraint"],model_type='dense', name='SNN')
+                        SNN = MLmodel(n1=128,n2=64,d_o=0.4,ac_func="sigmoid", weight_constraint=3.0,initializer='uniform',model_type='dense', name='SNN') # not running grid search since those were found as best
+                        # SNN = MLmodel(n1=128,n2=64,d_o=grid_params["model__dropout_rate"],ac_func=grid_params["model__activation"], weight_constraint=grid_params["model__weight_constraint"],model_type='dense', name='SNN')
                     elif model_type == "uniLSTM":
                         # uniLSTM = MLmodel(n1=32,n2=20,d_o=grid_params.dropout_rate,ac_func=grid_params.activation,model_type='uniLSTM',name='uLSTM')
                         uniLSTM = MLmodel(n1=32,n2=20,d_o=0.3,ac_func="sigmoid",model_type='uniLSTM',name='uLSTM')

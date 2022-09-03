@@ -11,17 +11,16 @@ import seaborn as sns
 from datetime import datetime
 from constants import *
 
-def process_tokens_dataframe(file_path, sents):
+def process_tokens_dataframe(file_path, sents): # remove all rows that don't have ranking for this sent
     df = pd.read_csv(os.path.join(data_path,f"{file_path}"),index_col=0)
     filtered_df = df[df[sents].notnull().all(1)] # right now it checks that all the sentiments exist - will be changed to check that any of them exists
-    balanced_df = balance_data(filtered_df, sents, method=balance_method)
-    return balanced_df
+    return filtered_df
 
 def balance_data(df, sents, method=None):
     if method:
-        X = df.drop([sents], axis=1)
+        X = df.drop(sents, axis=1)
         y = pd.DataFrame(df[sents])
-        print(f'initial value count: {y.value_counts()}')  # make log global in order to use print and log
+        # print(f'initial value count: {y.value_counts()}')  # make log global in order to use print and log
         if method == 'over':
             ros = RandomOverSampler(random_state=0)
             X_res, y_res = ros.fit_resample(X, y)
@@ -29,7 +28,7 @@ def balance_data(df, sents, method=None):
             rus = RandomUnderSampler(random_state=0)
             X_res, y_res = rus.fit_resample(X, y)
         res = pd.concat([y_res, X_res], axis=1)
-        print(f'value count after {method} sampling: {y_res.value_counts()}')
+        # print(f'value count after {method} sampling: {y_res.value_counts()}')
         return res
     return df
 
@@ -47,12 +46,12 @@ def get_grid_params(model_type):
     if model_type == "":
         return None
     elif model_type == "uniLSTM" or model_type == "dense" or model_type == "BiLSTM":
-        return { 'model__activation' : ["sigmoid","tanh","relu"],'model__dropout_rate':[0.0, 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9],'model__weight_constraint' : [1.0]}
+        return {'model__optimizer':['adam', 'sgd'], 'model__initializer': ['normal', 'uniform'],'model__activation' : ["sigmoid","tanh","relu"],'model__dropout_rate':[0.2,0.3,0.4,0.5,0.6,0.7],'model__weight_constraint' : [1.0,2.0,3.0,4.0]}
 def get_grid__optimizer_params(model_type):
     if model_type == "":
         return None
     elif model_type == "uniLSTM" or model_type == "dense" or model_type == "BiLSTM":
-        return {'optimizer__learning_rate':[0.001, 0.01, 0.1, 0.2, 0.3], 'optimizer__momentum':[0.0, 0.2, 0.4, 0.6, 0.8, 0.9]}
+        return {'model__optimizer':['adam', 'sgd'],'optimizer__learning_rate':[0.001, 0.01, 0.1, 0.2, 0.3], 'optimizer__decay':[0.0, 0.2, 0.4, 0.6, 0.8, 0.9]}
 
 def init_analysis():
     now = datetime.now()
@@ -126,6 +125,7 @@ def post_split_process(train_df, test_df,sentiment):
         to_remove.remove(sentiment)
     train_df.drop([col for col in train_df.columns if   col in to_remove], axis=1, inplace=True)
     test_df.drop([col for col in test_df.columns if col in to_remove ], axis=1, inplace=True)
+    train_df = balance_data(train_df, sentiment, method=balance_method)
 
     return train_df,test_df
 def grid_search_df_process(df,sentiment):

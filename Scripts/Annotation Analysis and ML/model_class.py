@@ -14,11 +14,12 @@ from sklearn.metrics import mean_squared_error, r2_score
 class MLmodel:
 
     models = []
-    def __init__(self, n1=0,n2=0,d_o=0.1,ac_func="tanh",model_type="",n_epochs=8,name="",weight_constraint=""):
+    def __init__(self, n1=0,n2=0,d_o=0.1,ac_func="tanh",model_type="",n_epochs=8,name="",initializer="",weight_constraint=""):
         self.n1 = n1
         self.n2 = n2
         self.d_o = d_o # dropout
         self.ac_func = ac_func
+        self.initializer=initializer
         self.model_type = model_type # can be: 'dense', 'uniLSTM' or 'biLSTM'
         self.n_epochs = n_epochs
         self.name = name
@@ -33,9 +34,9 @@ class MLmodel:
     def init_model(self,X):
         new_model = Sequential()
         if (self.model_type=="dense"):
-            new_model.add(Dense(self.n1, activation=self.ac_func,kernel_constraint=MaxNorm(self.weight_constraint)))
+            new_model.add(Dense(self.n1,kernel_initializer=self.initializer, activation=self.ac_func,kernel_constraint=MaxNorm(self.weight_constraint)))
             new_model.add(Dropout(self.d_o))
-            new_model.add(Dense(self.n2, activation=self.ac_func))
+            new_model.add(Dense(self.n2,kernel_initializer=self.initializer, activation=self.ac_func))
         if (self.model_type=="uniLSTM"):
             new_model.add(LSTM(self.n1, stateful=True, return_sequences=True, activation=self.ac_func, batch_input_shape=(1, X.shape[1], X.shape[2])))
             new_model.add(Dropout(self.d_o))
@@ -114,15 +115,15 @@ class MLmodel:
         return self
 def rmse(y_true, y_pred):
 	return backend.sqrt(backend.mean(backend.square(y_pred - y_true), axis=-1))
-def create_model_for_grid_dense(dropout_rate,activation,weight_constraint,input_shape,optimizer_grid_search=False):
+def create_model_for_grid_dense(dropout_rate,activation,weight_constraint,optimizer,initializer,input_shape,optimizer_grid_search=False):
 	# create model
     model = Sequential()
-    model.add(Dense(128,input_shape=input_shape, activation=activation,  kernel_constraint=MaxNorm(weight_constraint)))
+    model.add(Dense(128,kernel_initializer=initializer,input_shape=input_shape, activation=activation,  kernel_constraint=MaxNorm(weight_constraint)))
     model.add(Dropout(dropout_rate))
-    model.add(Dense(64, activation=activation))
-    model.add(Dense(1))
+    model.add(Dense(64, activation=activation,kernel_initializer=initializer))
+    model.add(Dense(1,kernel_initializer=initializer))
     if optimizer_grid_search == True:
         return model
     else:
-        model.compile(loss='mean_squared_error', optimizer="adam",metrics=[rmse])
+        model.compile(loss="mean_squared_error", optimizer=optimizer,metrics=[rmse])
         return model
