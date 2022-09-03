@@ -33,3 +33,5 @@ all_emotions = ['Admiration', 'Adoration', 'Aesthetic appreciation', 'Amusement'
             'Consequences', 'Danger', 'Self Involvement', 'Self Consistency', 'Relationship', 'Influence',
             'Agent vs.Situation', 'Attention', 'Safety', 'Approach', 'Arousal', 'Commitment', 'Dominance',
             'Effort', 'Fairness', 'Identity', 'Upswing']
+
+balance_method = 'over' # over for over-sampling, under for under-sampling, won't balance if None

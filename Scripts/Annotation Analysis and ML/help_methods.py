@@ -5,6 +5,8 @@ from os import listdir
 import matplotlib.pyplot  as plt
 from sklearn.model_selection import LeaveOneGroupOut
 from sklearn.metrics import accuracy_score
+from imblearn.under_sampling import RandomUnderSampler
+from imblearn.over_sampling import RandomOverSampler
 import seaborn as sns
 from datetime import datetime
 from constants import *
@@ -12,7 +14,24 @@ from constants import *
 def process_tokens_dataframe(file_path, sents):
     df = pd.read_csv(os.path.join(data_path,f"{file_path}"),index_col=0)
     filtered_df = df[df[sents].notnull().all(1)] # right now it checks that all the sentiments exist - will be changed to check that any of them exists
-    return filtered_df
+    balanced_df = balance_data(filtered_df, sents, method=balance_method)
+    return balanced_df
+
+def balance_data(df, sents, method=None):
+    if method:
+        X = df.drop([sents], axis=1)
+        y = pd.DataFrame(df[sents])
+        print(f'initial value count: {y.value_counts()}')  # make log global in order to use print and log
+        if method == 'over':
+            ros = RandomOverSampler(random_state=0)
+            X_res, y_res = ros.fit_resample(X, y)
+        elif method == 'under':
+            rus = RandomUnderSampler(random_state=0)
+            X_res, y_res = rus.fit_resample(X, y)
+        res = pd.concat([y_res, X_res], axis=1)
+        print(f'value count after {method} sampling: {y_res.value_counts()}')
+        return res
+    return df
 
 def split_data_using_cross_validation(df, sentitment):
     groups = df["episodeName"].to_numpy()
