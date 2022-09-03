@@ -1,4 +1,6 @@
 experiment-template-firebase-adminsdk-vtljg-d688cde0e9.json
+__pycache__/
+*.py[cod]
 pytorch_model.bin
 venv/
 destination_folder/
