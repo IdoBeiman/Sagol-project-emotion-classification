@@ -1,20 +1,20 @@
-import constants
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import LSTM
 from help_methods import *
+from tensorflow.keras.constraints import MaxNorm
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Bidirectional
 import numpy as np
-from sklearn import linear_model
+from sklearn import linear_model, metrics
 from math import sqrt
-from sklearn.metrics import mean_squared_error
+from keras import backend
+from sklearn.metrics import mean_squared_error, r2_score
 
 class MLmodel:
 
     models = []
-
-    def __init__(self, n1=0,n2=0,d_o=0.1,ac_func="tanh",model_type="",n_epochs=8,name=""):
+    def __init__(self, n1=0,n2=0,d_o=0.1,ac_func="tanh",model_type="",n_epochs=8,name="",weight_constraint=""):
         self.n1 = n1
         self.n2 = n2
         self.d_o = d_o # dropout
@@ -22,6 +22,8 @@ class MLmodel:
         self.model_type = model_type # can be: 'dense', 'uniLSTM' or 'biLSTM'
         self.n_epochs = n_epochs
         self.name = name
+        self.weight_constraint=weight_constraint
+        self.grid_params = get_grid_params(model_type)
         MLmodel.models.append(self)
 
     def get_models_names():
@@ -31,7 +33,7 @@ class MLmodel:
     def init_model(self,X):
         new_model = Sequential()
         if (self.model_type=="dense"):
-            new_model.add(Dense(self.n1, activation=self.ac_func))
+            new_model.add(Dense(self.n1, activation=self.ac_func,kernel_constraint=MaxNorm(self.weight_constraint)))
             new_model.add(Dropout(self.d_o))
             new_model.add(Dense(self.n2, activation=self.ac_func))
         if (self.model_type=="uniLSTM"):
@@ -74,7 +76,8 @@ class MLmodel:
 
     def calculate_error(self,y):
         return sqrt(mean_squared_error(y, self.predictions))
-
+    def calculate_r_squared_error (self,y ):
+        return r2_score(y, self.predictions)
     def fit_baseline(self,train_df):
         mode = train_df[predicted_sentiment].mode().loc[0]
         self.model = mode
@@ -102,4 +105,24 @@ class MLmodel:
     def predict_elastic(self, test_df):
         elasticPrediction = self.model.predict(test_df.drop([predicted_sentiment], axis=1))
         self.predictions = elasticPrediction
+    def get_params(self, deep=True):
+        return self.__dict__
 
+    def set_params(self, **parameters):
+        for parameter, value in parameters.items():
+            setattr(self, parameter, value)
+        return self
+def rmse(y_true, y_pred):
+	return backend.sqrt(backend.mean(backend.square(y_pred - y_true), axis=-1))
+def create_model_for_grid_dense(dropout_rate,activation,weight_constraint,input_shape,optimizer_grid_search=False):
+	# create model
+    model = Sequential()
+    model.add(Dense(128,input_shape=input_shape, activation=activation,  kernel_constraint=MaxNorm(weight_constraint)))
+    model.add(Dropout(dropout_rate))
+    model.add(Dense(64, activation=activation))
+    model.add(Dense(1))
+    if optimizer_grid_search == True:
+        return model
+    else:
+        model.compile(loss='mean_squared_error', optimizer="adam",metrics=[rmse])
+        return model

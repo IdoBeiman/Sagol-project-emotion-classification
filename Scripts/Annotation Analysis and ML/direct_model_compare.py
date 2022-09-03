@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 from help_methods import *
+from pre_test_model_evaluation import *
 from model_class import MLmodel
 
 def extract_details_from_file_name(filename):
@@ -17,20 +18,27 @@ def run():
         rmses = pd.DataFrame(columns=MLmodel.get_models_names())
         tmp_Results_dir = f"{dest}/{predicted_sentiment}" # one folder for all of the tests
         os.makedirs(tmp_Results_dir)
-        for podcast in get_podcasts_from_folder():
+        for podcast in get_podcasts_from_folder(): # get all csv files from the given folder in constants file
             total_predictions_df=pd.DataFrame()
-            podcast_df = process_tokens_dataframe(podcast,sents=sents)
+            podcast_df = process_tokens_dataframe(podcast,sents=sents) # after that to add under/over sampling
             for s in sents:
                 print_and_log(log,f"*************** {s} *******************")
-    
+                pre_processed_df=podcast_df.copy(deep=True)
                 MLmodel.models =[]
-                SNNtanh   = MLmodel(n1=128,n2=64,d_o=0.6,ac_func="tanh",model_type='dense', name='SNNtanh')
-                SNNrelu   = MLmodel(n1=128,n2=64,d_o=0.6,ac_func="relu",model_type='dense', name='SNNrelu')
-                uniLSTM = MLmodel(n1=32,n2=20,d_o=0.3,ac_func="sigmoid",model_type='uniLSTM',name='uLSTM')
-                BiLSTM  = MLmodel(n1=16,n2=16,d_o=0.4,ac_func="sigmoid",model_type='BiLSTM',name='BiLSTM')
+                for model_type in model_types:
+                    if model_type == "dense":
+                        grid_params=get_optimal_model_params(pre_processed_df,s,model_type)
+                        SNN = MLmodel(n1=128,n2=64,d_o=grid_params["model__dropout_rate"],ac_func=grid_params["model__activation"], weight_constraint=grid_params["model__weight_constraint"],model_type='dense', name='SNN')
+                    elif model_type == "uniLSTM":
+                        # uniLSTM = MLmodel(n1=32,n2=20,d_o=grid_params.dropout_rate,ac_func=grid_params.activation,model_type='uniLSTM',name='uLSTM')
+                        uniLSTM = MLmodel(n1=32,n2=20,d_o=0.3,ac_func="sigmoid",model_type='uniLSTM',name='uLSTM')
+                    elif model_type == "BiLSTM":
+                        # BiLSTM = MLmodel(n1=16,n2=16,d_o=grid_params.dropout_rate,ac_func=grid_params.activation,model_type='BiLSTM',name='BiLSTM')
+                        BiLSTM = MLmodel(n1=16,n2=16,d_o=0.4,ac_func="sigmoid",model_type='BiLSTM',name='BiLSTM')
+
                 Linear = MLmodel(name="Linear")
                 Baseline = MLmodel(name='BL')
-                nn_models = [SNNtanh,uniLSTM, BiLSTM,SNNrelu]
+                nn_models = [SNN,uniLSTM, BiLSTM]
         
                 print_and_log(log,f"{podcast}")
                 iterations = get_num_splits(podcast_df)
@@ -57,15 +65,21 @@ def run():
 
                     for model in MLmodel.models:
                         print_and_log(log, f"{model.__dict__}")
-                        if model.name in accumulatedData.keys():
-                            accumulatedData[model.name] += model.calculate_error(test_split_df[s])
+                        if model.name+"_rmse" in accumulatedData.keys():
+                            accumulatedData[model.name+"_rmse"] += model.calculate_error(test_split_df[s])
                         else:
-                            accumulatedData[model.name]=0
-                            accumulatedData[model.name] += model.calculate_error(test_split_df[s])
+                            accumulatedData[model.name+"_rmse"]=0
+                            accumulatedData[model.name+"_rmse"] += model.calculate_error(test_split_df[s])
+                        if model.name+"_r_square_correlation" in accumulatedData.keys():
+                            accumulatedData[model.name+"_r_square_correlation"] += model.calculate_r_squared_error(test_split_df[s])
+                        else:
+                            accumulatedData[model.name+"_r_square_correlation"]=0
+                            accumulatedData[model.name+"_r_square_correlation"] += model.calculate_r_squared_error(test_split_df[s])
                         total_predictions_df[model.name+"_"+" iteration_"+str(current_iteration)] = pd.Series(model.predictions)
                     current_iteration +=1
                 for model in MLmodel.models: # after we finished the cross validation iterations we will divide the accumlated error by the number of iterations
-                    row[model.name] =  accumulatedData[model.name]/iterations
+                    row[model.name+"_rmse"] =  accumulatedData[model.name+"_rmse"]/iterations
+                    row[model.name+"_r_square_correlation"] =  accumulatedData[model.name+"_r_square_correlation"]/iterations
                 rmses = rmses.append(row, ignore_index=True)
                 predictionsFileName = f"{tmp_Results_dir}/{trim_file_extension(podcast)}_model_predictions.csv"
             total_predictions_df.to_csv(predictionsFileName, mode='w', header=True) # predictions per podcast

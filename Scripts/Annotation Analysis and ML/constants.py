@@ -7,6 +7,8 @@ feat_vec = [str(i) for i in range(0, 768)]
 # which sentiment are we learning on
 predicted_sentiment = "Nostalgia"
 
+model_types = ["dense","uniLSTM","BiLSTM"]
+
 all_podcasts = ['train_activations_layer_8_sub005_operation_last_word_origin_full']# activations input file names
 podasts_for_train = all_podcasts
 

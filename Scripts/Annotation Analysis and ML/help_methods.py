@@ -24,6 +24,16 @@ def get_num_splits(df):
     logo = LeaveOneGroupOut()
     iterations = logo.get_n_splits(groups=groups)
     return iterations
+def get_grid_params(model_type):
+    if model_type == "":
+        return None
+    elif model_type == "uniLSTM" or model_type == "dense" or model_type == "BiLSTM":
+        return { 'model__activation' : ["sigmoid","tanh","relu"],'model__dropout_rate':[0.0, 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9],'model__weight_constraint' : [1.0]}
+def get_grid__optimizer_params(model_type):
+    if model_type == "":
+        return None
+    elif model_type == "uniLSTM" or model_type == "dense" or model_type == "BiLSTM":
+        return {'optimizer__learning_rate':[0.001, 0.01, 0.1, 0.2, 0.3], 'optimizer__momentum':[0.0, 0.2, 0.4, 0.6, 0.8, 0.9]}
 
 def init_analysis():
     now = datetime.now()
@@ -99,6 +109,13 @@ def post_split_process(train_df, test_df,sentiment):
     test_df.drop([col for col in test_df.columns if col in to_remove ], axis=1, inplace=True)
 
     return train_df,test_df
+def grid_search_df_process(df,sentiment):
+    df.drop(["episodeName"], axis=1, inplace=True)
+    df.reset_index(drop=True, inplace=True)
+    to_remove = all_emotions
+    if sentiment in to_remove:
+        to_remove.remove(sentiment)
+    df.drop([col for col in df.columns if   col in to_remove], axis=1, inplace=True)
 def plot_predictions(prediction_file_name, result_dir):
     sns.set()
     sns.set_theme(style="whitegrid", font="Times New Roman")
