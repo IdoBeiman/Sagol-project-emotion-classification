@@ -19,7 +19,7 @@ def run():
         os.makedirs(tmp_Results_dir)
         for podcast in get_podcasts_from_folder():
             total_predictions_df=pd.DataFrame()
-            podcast_df = process_tokens_dataframe(podcast,sents=sents)
+            podcast_df = process_tokens_dataframe(podcast,sents=sents, smoothed=True)
             for s in sents:
                 print_and_log(log,f"*************** {s} *******************")
     
