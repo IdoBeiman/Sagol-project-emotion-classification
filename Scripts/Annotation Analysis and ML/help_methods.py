@@ -9,8 +9,13 @@ import seaborn as sns
 from datetime import datetime
 from constants import *
 
-def process_tokens_dataframe(file_path, sents):
+def process_tokens_dataframe(file_path, sents, smoothed=False):
     df = pd.read_csv(os.path.join(data_path,f"{file_path}"),index_col=0)
+    label_cols = df.columns.intersection(all_emotions)
+    labels = df[label_cols]
+    if smoothed:
+        smooth_labels(labels, factor=0.1)
+    df[label_cols] = labels
     filtered_df = df[df[sents].notnull().all(1)] # right now it checks that all the sentiments exist - will be changed to check that any of them exists
     return filtered_df
 
@@ -132,3 +137,10 @@ def plot_predictions(prediction_file_name, result_dir):
         axi.label_outer()
         
     fig.savefig(f"{result_dir}/predictions.png")
+
+def smooth_labels(labels, factor=0.1):
+    # smooth the labels
+    labels *= (1 - factor)
+    labels += (factor / labels.shape[1])
+    # returned the smoothed labels
+    return labels
