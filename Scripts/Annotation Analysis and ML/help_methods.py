@@ -1,15 +1,64 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon May  3 14:05:39 2021
-
-@author: Tamara
-"""
 import os
+import numpy as np
 import pandas as pd
+from os import listdir
 import matplotlib.pyplot  as plt
+from sklearn.model_selection import LeaveOneGroupOut
+from sklearn.metrics import accuracy_score
+from imblearn.under_sampling import RandomUnderSampler
+from imblearn.over_sampling import RandomOverSampler
 import seaborn as sns
 from datetime import datetime
 from constants import *
+
+def process_tokens_dataframe(file_path, sents, smoothed=False):
+    df = pd.read_csv(os.path.join(data_path,f"{file_path}"),index_col=0)
+    label_cols = df.columns.intersection(all_emotions)
+    labels = df[label_cols]
+    if smoothed:
+        smooth_labels(labels, factor=0.1)
+    df[label_cols] = labels
+    filtered_df = df[df[sents].notnull().all(1)] # right now it checks that all the sentiments exist - will be changed to check that any of them exists
+    return filtered_df
+
+def balance_data(df, sents, method=None):
+    if method:
+        X = df.drop(sents, axis=1)
+        y = pd.DataFrame(df[sents])
+        # print(f'initial value count: {y.value_counts()}')  # make log global in order to use print and log
+        if method == 'over':
+            ros = RandomOverSampler(random_state=0)
+            X_res, y_res = ros.fit_resample(X, y)
+        elif method == 'under':
+            rus = RandomUnderSampler(random_state=0)
+            X_res, y_res = rus.fit_resample(X, y)
+        res = pd.concat([y_res, X_res], axis=1)
+        # print(f'value count after {method} sampling: {y_res.value_counts()}')
+        return res
+    return df
+
+def split_data_using_cross_validation(df, sentitment):
+    groups = df["episodeName"].to_numpy()
+    logo = LeaveOneGroupOut()
+    return logo.split(df, df[sentitment],groups=groups)
+
+def get_num_splits(df):
+    groups = df["episodeName"].to_numpy()
+    logo = LeaveOneGroupOut()
+    iterations = logo.get_n_splits(groups=groups)
+    return iterations
+def get_grid_params(model_type):
+    if model_type == "":
+        return None
+    elif model_type == "dense" or model_type == "BiLSTM":
+        return {'model__optimizer':['adam', 'sgd'], 'model__initializer': ['normal', 'uniform'],'model__activation' : ["sigmoid","tanh","relu"],'model__dropout_rate':[0.2,0.3,0.4,0.5,0.6,0.7],'model__weight_constraint' : [1.0,2.0,3.0,4.0]}
+    elif model_type == "uniLSTM":
+        return {'model__activation' : ["sigmoid","tanh","relu"],'model__dropout_rate':[0.2,0.3,0.4,0.5,0.6,0.7]}
+def get_grid__optimizer_params(model_type):
+    if model_type == "uniLSTM":
+        return None
+    elif model_type == "uniLSTM" or model_type == "dense" or model_type == "BiLSTM":
+        return {'model__optimizer':['adam', 'sgd'],'optimizer__learning_rate':[0.001, 0.01, 0.1, 0.2, 0.3], 'optimizer__decay':[0.0, 0.2, 0.4, 0.6, 0.8, 0.9]}
 
 def init_analysis():
     now = datetime.now()
@@ -21,8 +70,7 @@ def init_analysis():
     ## init log file
     log = open(f"{dest_dir}/running_log.txt", "w+")
     log.write(now.strftime("%d-%m-%Y_%H-%M-%S")+"\n\n")
-    log.write(f"Labeling method: {LABALING_METHOD}\n")
-    log.write(f"Predicted sentiment: {prdicted_sentiment}\n")
+    log.write(f"Predicted sentiment: {predicted_sentiment}\n")
     log.write(f"Train list:\n {podasts_for_train}\n")
     return log, dest_dir
 
@@ -31,11 +79,6 @@ def print_and_log(log, text):
     print(text)
     log.write(text+"\n")
 
-def get_feat_and_label_per_pod(pod,sentiment):
-    full_df = pd.read_csv(os.path.join(data_path,f"{sentiment}_ML_input.csv"))
-    pod_full = full_df[full_df["audio_name"] == pod]
-    pod_col_names = [LABALING_METHOD] + feat_vec
-    return pod_full[pod_col_names]
 
 def forecast_lstm(model, batch_size, X):
     """ make a one-step forecast.
@@ -45,23 +88,11 @@ def forecast_lstm(model, batch_size, X):
     yhat = model.predict(X, batch_size=batch_size)
     return yhat[0,0]
 
+def get_podcasts_from_folder():
+    all_files = listdir(data_path)    
+    csv_files = list(filter(lambda f: f.endswith('.csv'), all_files))
+    return csv_files
 
-def get_train_test_df(test_pod,sentiment=prdicted_sentiment):
-    train_pods = [p for p in podasts_for_train if p!=test_pod]
-    train_df = pd.DataFrame()
-    test_df = pd.DataFrame()
-    for pod in podasts_for_train: 
-        print(pod)
-        if (pod==test_pod):
-            test_df = get_feat_and_label_per_pod(pod,sentiment)
-        else:
-            df = get_feat_and_label_per_pod(pod,sentiment)
-            train_df = pd.concat([train_df, df])
-    test_df = test_df.reset_index()
-    train_df = train_df.reset_index()
-    test_df.drop(["index"], axis=1, inplace=True)
-    train_df.drop(["index"], axis=1, inplace=True)
-    return train_df, test_df
 
 def plot_model_comparison(predictions_dir):
     results = pd.read_csv(f"{predictions_dir}/direct_model_comparison.csv")
@@ -85,39 +116,69 @@ def plot_model_comparison(predictions_dir):
     print(results.std(axis = 0))
     
     return
+def calcualte_model_accuracy (real_values, predictions ):
+    acc = accuracy_score(real_values,predictions)
 
-def plot_predictions(predictions_dir):
+def trim_file_extension(filename):
+    return filename.split(".")[0]
+    
+def post_split_process(train_df, test_df,sentiment):
+    test_df.drop(["episodeName"], axis=1, inplace=True)
+    test_df.reset_index(drop=True, inplace=True)
+    train_df.drop(["episodeName"], axis=1, inplace=True)
+    train_df.reset_index(drop=True, inplace=True)
+    to_remove = all_emotions
+    if sentiment in to_remove:
+        to_remove.remove(sentiment)
+    train_df.drop([col for col in train_df.columns if   col in to_remove], axis=1, inplace=True)
+    test_df.drop([col for col in test_df.columns if col in to_remove ], axis=1, inplace=True)
+    train_df = balance_data(train_df, sentiment, method=balance_method)
+
+    return train_df,test_df
+def grid_search_df_process(df,sentiment):
+    df.drop(["episodeName"], axis=1, inplace=True)
+    df.reset_index(drop=True, inplace=True)
+    to_remove = all_emotions
+    if sentiment in to_remove:
+        to_remove.remove(sentiment)
+    df.drop([col for col in df.columns if   col in to_remove], axis=1, inplace=True)
+def plot_predictions(prediction_file_name, result_dir):
     sns.set()
     sns.set_theme(style="whitegrid", font="Times New Roman")
     sns.color_palette("bright")
     
-    for pod in podasts_for_train:
+    results = pd.read_csv(prediction_file_name)
+    y = results['Real']
+    results.drop(['Unnamed: 0','Real'],axis=1,inplace=True)
+    models = [m for m in results.columns if m!="BL"]
     
-        results = pd.read_csv(f"{predictions_dir}/{pod}_model_predictions.csv")
-        y = results['Real']
-        results.drop(['Unnamed: 0','Real'],axis=1,inplace=True)
-        models = [m for m in results.columns if m!="BL"]
+    fig,a =  plt.subplots(2,2,figsize=(15, 5),gridspec_kw={'hspace': 0.1, 'wspace': 0.1})
+    sns.despine(left=True, bottom=True)
+    fig.suptitle(f'{prediction_file_name}')
+    i = 0
+    for ax in a.ravel():
+        l1=ax.plot(y,label = "real labels")[0]
+        l3=ax.plot(results['BL'],label='BL')[0]
+        l2=ax.plot(results[models[i]],label=models[i])
         
-        fig,a =  plt.subplots(2,2,figsize=(15, 5),gridspec_kw={'hspace': 0.1, 'wspace': 0.1})
-        sns.despine(left=True, bottom=True)
-        fig.suptitle(f'{pod}')
-        i = 0
-        for ax in a.ravel():
-            l1=ax.plot(y,label = "real labels")[0]
-            l3=ax.plot(results['BL'],label='BL')[0]
-            l2=ax.plot(results[models[i]],label=models[i])
-            
-            #ax.legend(fontsize=8)
-            ax.set_ylim([0.5, 5.5]) 
-            ax.set_title(f'{models[i]}')
-            i+=1
+        #ax.legend(fontsize=8)
+        ax.set_ylim([0.5, 5.5]) 
+        ax.set_title(f'{models[i]}')
+        i+=1
+    
+    # Create the legend
+    fig.legend([l1, l3,l2],     # The line objects
+                labels=['Real','BL','Model for comparison'],   # The labels for each line
+                loc="lower center", ncol=3)
+    
+    for axi in fig.get_axes():
+        axi.label_outer()
         
-        # Create the legend
-        fig.legend([l1, l3,l2],     # The line objects
-                   labels=['Real','BL','Model for comparison'],   # The labels for each line
-                   loc="lower center", ncol=3)
-        
-        for axi in fig.get_axes():
-            axi.label_outer()
-            
-        fig.savefig(f"{predictions_dir}/{pod}_predictions.png")
+    fig.savefig(f"{result_dir}/predictions.png")
+
+def smooth_labels(labels, factor=0.1):
+    # smooth the labels
+    labels *= (1 - factor)
+    labels += (factor / labels.shape[1])
+    # returned the smoothed labels
+    return labels
