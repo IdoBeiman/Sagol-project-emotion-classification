@@ -115,12 +115,12 @@ class MLmodel:
         return self
 def rmse(y_true, y_pred):
 	return backend.sqrt(backend.mean(backend.square(y_pred - y_true), axis=-1))
-def create_model_for_grid_dense(dropout_rate,activation,weight_constraint,optimizer,initializer,input_shape,optimizer_grid_search=False):
+def create_model_for_grid_dense(dropout_rate,activation,weight_constraint,optimizer,initializer,input_shape, layer_1_neurons, layer_2_neurons,optimizer_grid_search=False):
 	# create model
     model = Sequential()
-    model.add(Dense(128,kernel_initializer=initializer,input_shape=input_shape, activation=activation,  kernel_constraint=MaxNorm(weight_constraint)))
+    model.add(Dense(layer_1_neurons,kernel_initializer=initializer,input_shape=input_shape, activation=activation,  kernel_constraint=MaxNorm(weight_constraint)))
     model.add(Dropout(dropout_rate))
-    model.add(Dense(64, activation=activation,kernel_initializer=initializer))
+    model.add(Dense(layer_2_neurons, activation=activation,kernel_initializer=initializer))
     model.add(Dense(1,kernel_initializer=initializer))
     if optimizer_grid_search == True:
         return model
@@ -130,9 +130,9 @@ def create_model_for_grid_dense(dropout_rate,activation,weight_constraint,optimi
 def create_model_for_grid_uniLSTM(dropout_rate,activation,input_shape_dim1,input_shape_dim2):
 	# create model
     model = Sequential()
-    model.add(LSTM(32, stateful=True, return_sequences=True, activation=activation,batch_input_shape=(1, input_shape_dim1,input_shape_dim2)))
+    model.add(LSTM(32, return_sequences=True, activation=activation,batch_input_shape=(1, input_shape_dim1,input_shape_dim2)))
     model.add(Dropout(dropout_rate))
-    model.add(LSTM(20, stateful=True, return_sequences=True, activation=activation))
+    model.add(LSTM(20, return_sequences=True, activation=activation))
     model.add(Dense(1))
     model.compile(loss="mean_squared_error", optimizer="adam",metrics=[rmse])
     return model

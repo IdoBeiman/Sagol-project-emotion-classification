@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from os import listdir
 import matplotlib.pyplot  as plt
-from sklearn.model_selection import LeaveOneGroupOut
+from sklearn.model_selection import LeaveOneGroupOut, KFold
 from sklearn.metrics import accuracy_score
 from imblearn.under_sampling import RandomUnderSampler
 from imblearn.over_sampling import RandomOverSampler
@@ -37,21 +37,28 @@ def balance_data(df, sents, method=None):
         return res
     return df
 
-def split_data_using_cross_validation(df, sentitment):
-    groups = df["episodeName"].to_numpy()
-    logo = LeaveOneGroupOut()
-    return logo.split(df, df[sentitment],groups=groups)
+def split_data_using_cross_validation(df, sentitment, random_split=False):
+    if random_split == False:
+        groups = df["episodeName"].to_numpy()
+        logo = LeaveOneGroupOut()
+        return logo.split(df, df[sentitment],groups=groups)
+    else:
+        Kfold = KFold()
+        return Kfold.split(df, df[sentitment])
 
-def get_num_splits(df):
-    groups = df["episodeName"].to_numpy()
-    logo = LeaveOneGroupOut()
-    iterations = logo.get_n_splits(groups=groups)
-    return iterations
+def get_num_splits(df, random_split=False, k=5):
+    if random_split == False:
+        groups = df["episodeName"].to_numpy()
+        logo = LeaveOneGroupOut()
+        iterations = logo.get_n_splits(groups=groups)
+        return iterations
+    else:
+        return k
 def get_grid_params(model_type):
     if model_type == "":
         return None
     elif model_type == "dense" or model_type == "BiLSTM":
-        return {'model__optimizer':['adam', 'sgd'], 'model__initializer': ['normal', 'uniform'],'model__activation' : ["sigmoid","tanh","relu"],'model__dropout_rate':[0.2,0.3,0.4,0.5,0.6,0.7],'model__weight_constraint' : [1.0,2.0,3.0,4.0]}
+        return {'model__layer_2_neurons':[16,32,64,128],'model__layer_1_neurons':[128,256.512], 'model__optimizer':['adam', 'sgd'], 'model__initializer': ['normal', 'uniform'],'model__activation' : ["sigmoid"],'model__dropout_rate':[0.2,0.3,0.4,0.5,0.6,0.7],'model__weight_constraint' : [1.0,2.0,3.0,4.0]}
     elif model_type == "uniLSTM":
         return {'model__activation' : ["sigmoid","tanh","relu"],'model__dropout_rate':[0.2,0.3,0.4,0.5,0.6,0.7]}
 def get_grid__optimizer_params(model_type):
