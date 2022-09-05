@@ -28,26 +28,27 @@ def run():
                 for model_type in model_types:
                     if model_type == "dense":
                         # grid_params=get_optimal_model_params(pre_processed_df,s,model_type) # not running grid search since those were found as best
-                        SNN = MLmodel(n1=128,n2=64,d_o=0.4,ac_func="sigmoid", weight_constraint=3.0,initializer='uniform',model_type='dense', name='SNN') 
+                        SNN = MLmodel(n1=128,n2=64,d_o=0.6,ac_func="sigmoid",initializer='uniform',model_type='dense', name='SNN') 
                         # SNN = MLmodel(n1=128,n2=64,d_o=grid_params["model__dropout_rate"],ac_func=grid_params["model__activation"], weight_constraint=grid_params["model__weight_constraint"],model_type='dense', name='SNN')
                     elif model_type == "uniLSTM":
-                        grid_params=get_optimal_model_params(pre_processed_df,s,model_type) 
-                        uniLSTM = MLmodel(n1=32,n2=20,d_o=grid_params.dropout_rate,ac_func=grid_params.activation,model_type='uniLSTM',name='uLSTM')
-                        # uniLSTM = MLmodel(n1=32,n2=20,d_o=0.3,ac_func="sigmoid",model_type='uniLSTM',name='uLSTM')
+                        # grid_params=get_optimal_model_params(pre_processed_df,s,model_type) 
+                        # uniLSTM = MLmodel(n1=32,n2=20,d_o=grid_params.dropout_rate,ac_func=grid_params.activation,model_type='uniLSTM',name='uLSTM')
+                        uniLSTM = MLmodel(n1=32,n2=20,d_o=0.6,ac_func="sigmoid",model_type='uniLSTM',name='uLSTM')
                     elif model_type == "BiLSTM":
                         # BiLSTM = MLmodel(n1=16,n2=16,d_o=grid_params.dropout_rate,ac_func=grid_params.activation,model_type='BiLSTM',name='BiLSTM')
-                        BiLSTM = MLmodel(n1=16,n2=16,d_o=0.4,ac_func="sigmoid",model_type='BiLSTM',name='BiLSTM')
+                        BiLSTM = MLmodel(n1=16,n2=16,n3=8,d_o=0.4,ac_func="sigmoid",model_type='BiLSTM',name='BiLSTM')
 
                 Linear = MLmodel(name="Linear")
                 Baseline = MLmodel(name='BL')
                 nn_models = [SNN,uniLSTM, BiLSTM]
         
                 print_and_log(log,f"{podcast}")
-                iterations = get_num_splits(podcast_df)
+                iterations = get_num_splits(podcast_df, True)
                 current_iteration=1
                 row = {'Story':extract_details_from_file_name(podcast)}
+                # row = {'Story':"merged"}
                 accumulatedData ={}
-                for train_indexes, test_indexes in split_data_using_cross_validation(podcast_df, s):
+                for train_indexes, test_indexes in split_data_using_cross_validation(podcast_df, s,True): # true for random split
                     print (f"iteration {current_iteration} out of {iterations}.")
                     train_split_df = podcast_df.iloc[train_indexes]
                     test_split_df = podcast_df.iloc[test_indexes]
