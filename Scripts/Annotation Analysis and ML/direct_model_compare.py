@@ -45,8 +45,8 @@ def run():
                 print_and_log(log,f"{podcast}")
                 iterations = get_num_splits(podcast_df, True)
                 current_iteration=1
-                row = {'Story':extract_details_from_file_name(podcast)}
-                # row = {'Story':"merged"}
+                # row = {'Story':extract_details_from_file_name(podcast)}
+                row = {'Story':"merged"}
                 accumulatedData ={}
                 for train_indexes, test_indexes in split_data_using_cross_validation(podcast_df, s,True): # true for random split
                     print (f"iteration {current_iteration} out of {iterations}.")
