@@ -32,7 +32,7 @@ def run():
                         SNN = MLmodel(n1=128,n2=64,d_o=0.6,ac_func="sigmoid",initializer='uniform',model_type='dense', name='SNN') 
                         # SNN = MLmodel(n1=128,n2=64,d_o=grid_params["model__dropout_rate"],ac_func=grid_params["model__activation"], weight_constraint=grid_params["model__weight_constraint"],model_type='dense', name='SNN')
                     elif model_type == "uniLSTM":
-                        # grid_params=get_optimal_model_params(pre_processed_df,s,model_type) 
+                        # grid_params=get_optimal_model_params(pre_processed_df,s,model_type)
                         # uniLSTM = MLmodel(n1=32,n2=20,d_o=grid_params.dropout_rate,ac_func=grid_params.activation,model_type='uniLSTM',name='uLSTM')
                         uniLSTM = MLmodel(n1=32,n2=20,d_o=0.3,ac_func="sigmoid",model_type='uniLSTM',name='uLSTM')
                     elif model_type == "BiLSTM":
@@ -55,30 +55,32 @@ def run():
                     test_split_df = podcast_df.iloc[test_indexes]
                     train_split_df,test_split_df = post_split_process(train_split_df,test_split_df,s)
                     total_predictions_df['Real'+ "_"+str(current_iteration)+" iteration"]= test_split_df[s]
-                    Linear.fit_elastic(train_split_df)
-                    Linear.predict_elastic(test_split_df)
 
-                    Baseline.fit_baseline(train_split_df)
-                    Baseline.predict_baseline(test_split_df)
+                    Linear.fit_elastic(train_split_df.copy(deep=True))
+                    Linear.predict_elastic(test_split_df.copy(deep=True))
+
+                    Baseline.fit_baseline(train_split_df.copy(deep=True))
+                    Baseline.predict_baseline(test_split_df.copy(deep=True))
 
 
                     for m in nn_models:
                         print(m.name)
-                        m.fit_NN(train_split_df)
-                        m.predict_NN(test_split_df)
+                        m.fit_NN(train_split_df.copy(deep=True))
+                        m.predict_NN(test_split_df.copy(deep=True))
 
                     for model in MLmodel.models:
                         # print_and_log(log, f"{model.__dict__}")
+                        test_split_df_copy = test_split_df.copy(deep=True)
                         if model.name+"_rmse" in accumulatedData.keys():
-                            accumulatedData[model.name+"_rmse"] += model.calculate_error(test_split_df[s])
+                            accumulatedData[model.name+"_rmse"] += model.calculate_error(test_split_df_copy[s])
                         else:
                             accumulatedData[model.name+"_rmse"]=0
-                            accumulatedData[model.name+"_rmse"] += model.calculate_error(test_split_df[s])
+                            accumulatedData[model.name+"_rmse"] += model.calculate_error(test_split_df_copy[s])
                         if model.name+"_r_square_correlation" in accumulatedData.keys():
-                            accumulatedData[model.name+"_r_square_correlation"] += model.calculate_r_squared_error(test_split_df[s])
+                            accumulatedData[model.name+"_r_square_correlation"] += model.calculate_r_squared_error(test_split_df_copy[s])
                         else:
                             accumulatedData[model.name+"_r_square_correlation"]=0
-                            accumulatedData[model.name+"_r_square_correlation"] += model.calculate_r_squared_error(test_split_df[s])
+                            accumulatedData[model.name+"_r_square_correlation"] += model.calculate_r_squared_error(test_split_df_copy[s])
                         total_predictions_df[model.name+"_"+" iteration_"+str(current_iteration)] = pd.Series(model.predictions)
                     current_iteration +=1
                 for model in MLmodel.models: # after we finished the cross validation iterations we will divide the accumlated error by the number of iterations
