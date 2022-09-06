@@ -11,7 +11,7 @@ import seaborn as sns
 from datetime import datetime
 from constants import *
 
-def process_tokens_dataframe(file_path, sents, smoothed=False, filter_ones =True):
+def process_tokens_dataframe(file_path, sents, smoothed=False, filter_ones=True):
     df = pd.read_csv(os.path.join(data_path,f"{file_path}"),index_col=0)
     label_cols = df.columns.intersection(all_emotions)
     labels = df[label_cols]
@@ -20,7 +20,8 @@ def process_tokens_dataframe(file_path, sents, smoothed=False, filter_ones =True
     df[label_cols] = labels
     filtered_df = df[df[sents].notnull().all(1)] # right now it checks that all the sentiments exist - will be changed to check that any of them exists
     if filter_ones == True:
-        filtered_df = filtered_df[filtered_df["Sadness"] != 1]
+        filtered_df = filtered_df[filtered_df[predicted_sentiment] != 1]
+        # labels_to_bins(test_df)
     return filtered_df
 
 def balance_data(df, sents, method=None):
@@ -40,7 +41,11 @@ def balance_data(df, sents, method=None):
     return df
 
 def split_data_using_cross_validation(df, sentitment,n_splits=5, random_split=False):
-    if random_split == False:
+    if n_splits == 1:
+        groups = df["episodeName"].to_numpy()
+        logo = LeaveOneGroupOut()
+        return logo.split(df, df[sentitment],groups=groups)
+    elif random_split == False:
         groups = df["episodeName"].to_numpy()
         logo = LeaveOneGroupOut()
         return logo.split(df, df[sentitment],groups=groups)
@@ -132,7 +137,7 @@ def calcualte_model_accuracy (real_values, predictions ):
 def trim_file_extension(filename):
     return filename.split(".")[0]
     
-def post_split_process(train_df, test_df,sentiment):
+def post_split_process(train_df, test_df,sentiment, filter_ones = True): # filtering out 1 ranking which means the sentiment didn't appear in the segment
     test_df.drop(["episodeName"], axis=1, inplace=True)
     test_df.reset_index(drop=True, inplace=True)
     train_df.drop(["episodeName"], axis=1, inplace=True)
@@ -185,6 +190,10 @@ def plot_predictions(prediction_file_name, result_dir):
         axi.label_outer()
         
     fig.savefig(f"{result_dir}/predictions.png")
+def labels_to_bins(df): # one sentiment only
+    bins = [0,3,6,8]
+    labels = bins[1:]
+    df[predicted_sentiment] = pd.cut(df[predicted_sentiment], bins=bins, labels=[1,2,3])
 
 def smooth_labels(labels, factor=0.1):
     # smooth the labels

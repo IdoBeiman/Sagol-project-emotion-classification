@@ -20,7 +20,7 @@ def run():
         os.makedirs(tmp_Results_dir)
         for podcast in get_podcasts_from_folder(): # get all csv files from the given folder in constants file
             total_predictions_df=pd.DataFrame()
-            podcast_df = process_tokens_dataframe(podcast,sents=sents,filter_ones=True, smoothed=True)
+            podcast_df = process_tokens_dataframe(podcast,sents=sents, smoothed=False,filter_ones=True)
             for s in sents:
                 print_and_log(log,f"*************** {s} *******************")
                 pre_processed_df=podcast_df.copy(deep=True)
@@ -28,7 +28,7 @@ def run():
                 for model_type in model_types:
                     if model_type == "dense":
                         # grid_params=get_optimal_model_params(pre_processed_df,s,model_type,opimizer_grid_search=False) # not running grid search since those were found as best
-                        SNN = MLmodel(n1=128,n2=64,d_o=0.6,ac_func="tanh",initializer='uniform',model_type='dense', name='SNN') 
+                        SNN = MLmodel(n1=128,n2=64,d_o=0.6,ac_func="sigmoid",initializer='uniform',model_type='dense', name='SNN') 
                         # SNN = MLmodel(n1=128,n2=64,d_o=grid_params["model__dropout_rate"],ac_func=grid_params["model__activation"], weight_constraint=grid_params["model__weight_constraint"],model_type='dense', name='SNN')
                     elif model_type == "uniLSTM":
                         # grid_params=get_optimal_model_params(pre_processed_df,s,model_type) 
@@ -43,12 +43,12 @@ def run():
                 nn_models = [SNN,uniLSTM, BiLSTM]
         
                 print_and_log(log,f"{podcast}")
-                iterations = get_num_splits(podcast_df, True, k=2)
+                iterations = get_num_splits(podcast_df, True, k=5)
                 current_iteration=1
                 row = {'Story':extract_details_from_file_name(podcast)}
                 # row = {'Story':"merged"}
                 accumulatedData ={}
-                for train_indexes, test_indexes in split_data_using_cross_validation(podcast_df, s,n_splits=2,random_split= True): # true for random split
+                for train_indexes, test_indexes in split_data_using_cross_validation(podcast_df, s,n_splits=5,random_split= True):
                     print (f"iteration {current_iteration} out of {iterations}.")
                     train_split_df = podcast_df.iloc[train_indexes]
                     test_split_df = podcast_df.iloc[test_indexes]
