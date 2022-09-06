@@ -51,7 +51,7 @@ class MLmodel:
             new_model.add(Bidirectional(LSTM(self.n3, stateful=True, return_sequences=True, activation=self.ac_func)))
         new_model.add(Dense(1))
         opt = keras.optimizers.Adam(learning_rate=0.001)
-        new_model.compile(loss='mean_squared_logarithmic_error',metrics=['mse'], optimizer=opt)
+        new_model.compile(loss=rmse, optimizer=opt)
         return new_model
 
     def fit_NN(self, train_df,show_progress=False, n_epochs=8):

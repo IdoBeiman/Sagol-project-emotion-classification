@@ -20,7 +20,7 @@ def run():
         os.makedirs(tmp_Results_dir)
         for podcast in get_podcasts_from_folder(): # get all csv files from the given folder in constants file
             total_predictions_df=pd.DataFrame()
-            podcast_df = process_tokens_dataframe(podcast,sents=sents, smoothed=True)
+            podcast_df = process_tokens_dataframe(podcast,sents=sents, smoothed=False)
             for s in sents:
                 print_and_log(log,f"*************** {s} *******************")
                 pre_processed_df=podcast_df.copy(deep=True)
