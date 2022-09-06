@@ -1,9 +1,10 @@
 import os
 import numpy as np
+import random
 import pandas as pd
 from os import listdir
 import matplotlib.pyplot  as plt
-from sklearn.model_selection import LeaveOneGroupOut, KFold
+from sklearn.model_selection import LeaveOneGroupOut, KFold,GroupKFold,train_test_split
 from sklearn.metrics import accuracy_score
 from imblearn.under_sampling import RandomUnderSampler
 from imblearn.over_sampling import RandomOverSampler
@@ -40,23 +41,27 @@ def balance_data(df, sents, method=None):
         return res
     return df
 
-def split_data_using_cross_validation(df, sentitment,n_splits=5, random_split=False):
-    if n_splits == 1:
+# def single_split_iterator(df):
+#     indices = random.sample(range(0, len(df['episodeName'].values)), len((df['episodeName'].values))/5)
+#     test_idx = np.where(df["episodeName"] == episode_name)
+#     train_idx = np.where(df["episodeName"] != episode_name)
+#     yield (train_idx,test_idx)
+
+def split_data_using_cross_validation(df, sentitment,n_splits=3, random_split=False):
+    # if n_splits == 1:
+    #     return single_split_iterator(df)
+    if random_split == False:
         groups = df["episodeName"].to_numpy()
-        logo = LeaveOneGroupOut()
-        return logo.split(df, df[sentitment],groups=groups)
-    elif random_split == False:
-        groups = df["episodeName"].to_numpy()
-        logo = LeaveOneGroupOut()
+        logo = GroupKFold(n_splits)
         return logo.split(df, df[sentitment],groups=groups)
     else:
         Kfold = KFold(n_splits)
         return Kfold.split(df, df[sentitment])
 
-def get_num_splits(df, random_split=False, k=5):
+def get_num_splits(df, random_split=False,k=5):
     if random_split == False:
         groups = df["episodeName"].to_numpy()
-        logo = LeaveOneGroupOut()
+        logo = GroupKFold()
         iterations = logo.get_n_splits(groups=groups)
         return iterations
     else:
