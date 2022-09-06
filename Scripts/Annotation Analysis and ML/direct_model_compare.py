@@ -43,17 +43,18 @@ def run():
                 nn_models = [SNN,uniLSTM, BiLSTM]
         
                 print_and_log(log,f"{podcast}")
-                iterations = get_num_splits(podcast_df, True, k=1)
-                current_iteration=1
+                iterations = get_num_splits(podcast_df,k=1)
+                current_iteration=0
                 row = {'Story':extract_details_from_file_name(podcast)}
                 # row = {'Story':"merged"}
                 accumulatedData ={}
-                for train_indexes, test_indexes in split_data_using_cross_validation(podcast_df, s,n_splits=5,random_split= True):
+                for train_indexes, test_indexes in split_data_using_cross_validation(podcast_df, s,n_splits=3,random_split= True):
                     print (f"iteration {current_iteration} out of {iterations}.")
                     train_split_df = podcast_df.iloc[train_indexes]
                     test_split_df = podcast_df.iloc[test_indexes]
                     train_split_df,test_split_df = post_split_process(train_split_df,test_split_df,s)
-                    
+                    train_split_df.to_csv("train_check.csv")
+                    test_split_df.to_csv("test_split_df-check.csv")
                     total_predictions_df['Real'+ "_"+str(current_iteration)+" iteration"]= test_split_df[s]
                     Linear.fit_elastic(train_split_df)
                     Linear.predict_elastic(test_split_df)
@@ -82,8 +83,8 @@ def run():
                         total_predictions_df[model.name+"_"+" iteration_"+str(current_iteration)] = pd.Series(model.predictions)
                     current_iteration +=1
                 for model in MLmodel.models: # after we finished the cross validation iterations we will divide the accumlated error by the number of iterations
-                    row[model.name+"_rmse"] =  accumulatedData[model.name+"_rmse"]/iterations
-                    row[model.name+"_r_square_correlation"] =  accumulatedData[model.name+"_r_square_correlation"]/iterations
+                    row[model.name+"_rmse"] =  accumulatedData[model.name+"_rmse"]/current_iteration
+                    row[model.name+"_r_square_correlation"] =  accumulatedData[model.name+"_r_square_correlation"]/current_iteration
                 rmses = rmses.append(row, ignore_index=True)
                 predictionsFileName = f"{tmp_Results_dir}/{trim_file_extension(podcast)}_model_predictions.csv"
             total_predictions_df.to_csv(predictionsFileName, mode='w', header=True) # predictions per podcast
