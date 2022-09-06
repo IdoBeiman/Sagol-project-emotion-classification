@@ -50,8 +50,8 @@ class MLmodel:
             new_model.add(Dropout(self.d_o))
             new_model.add(Bidirectional(LSTM(self.n3, stateful=True, return_sequences=True, activation=self.ac_func)))
         new_model.add(Dense(1))
-        opt = keras.optimizers.Adam(learning_rate=0.003)
-        new_model.compile(loss='mean_squared_error', optimizer=opt)
+        opt = keras.optimizers.Adam(learning_rate=0.001)
+        new_model.compile(loss='mean_squared_logarithmic_error',metrics=['mse'], optimizer=opt)
         return new_model
 
     def fit_NN(self, train_df,show_progress=False, n_epochs=8):
@@ -127,11 +127,8 @@ def create_model_for_grid_dense(dropout_rate,activation,weight_constraint,optimi
     model.add(Dropout(dropout_rate))
     model.add(Dense(layer_2_neurons, activation=activation,kernel_initializer=initializer))
     model.add(Dense(1,kernel_initializer=initializer))
-    if optimizer_grid_search == True:
-        return model
-    else:
-        model.compile(loss="mean_squared_error", optimizer=optimizer,metrics=[rmse])
-        return model
+    model.compile(loss=rmse, optimizer=optimizer,metrics=[rmse])
+    return model
 def create_model_for_grid_uniLSTM(dropout_rate,activation,input_shape_dim1,input_shape_dim2):
 	# create model
     model = Sequential()
@@ -139,5 +136,5 @@ def create_model_for_grid_uniLSTM(dropout_rate,activation,input_shape_dim1,input
     model.add(Dropout(dropout_rate))
     model.add(LSTM(20, return_sequences=True, activation=activation))
     model.add(Dense(1))
-    model.compile(loss="mean_squared_error", optimizer="adam",metrics=[rmse])
+    model.compile(loss=rmse, optimizer="adam",metrics=[rmse])
     return model

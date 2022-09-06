@@ -65,7 +65,7 @@ def get_grid__optimizer_params(model_type):
     if model_type == "uniLSTM":
         return None
     elif model_type == "uniLSTM" or model_type == "dense" or model_type == "BiLSTM":
-        return {'model__optimizer':['adam', 'sgd'],'optimizer__learning_rate':[0.001, 0.01, 0.1, 0.2, 0.3], 'optimizer__decay':[0.0, 0.2, 0.4, 0.6, 0.8, 0.9]}
+        return {'model__optimizer':['adam'],'optimizer__learning_rate':[0.001, 0.01, 0.1, 0.2, 0.3], 'optimizer__decay':[0.0, 0.2, 0.4, 0.6, 0.8, 0.9]}
 
 def init_analysis():
     now = datetime.now()
