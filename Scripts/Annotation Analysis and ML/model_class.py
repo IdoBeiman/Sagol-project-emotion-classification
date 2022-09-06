@@ -15,7 +15,7 @@ from sklearn.metrics import mean_squared_error, r2_score
 class MLmodel:
 
     models = []
-    def __init__(self, n1=0,n2=0,n3=0,d_o=0.1,ac_func="tanh",model_type="",n_epochs=100,name="",initializer="",weight_constraint=""):
+    def __init__(self, n1=0,n2=0,n3=0,d_o=0.1,ac_func="tanh",model_type="",n_epochs=25,name="",initializer="",weight_constraint=""):
         self.n1 = n1
         self.n2 = n2
         self.n3=n3

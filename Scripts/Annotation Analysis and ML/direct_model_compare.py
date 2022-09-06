@@ -43,7 +43,7 @@ def run():
                 nn_models = [SNN,uniLSTM, BiLSTM]
         
                 print_and_log(log,f"{podcast}")
-                iterations = get_num_splits(podcast_df, True, k=5)
+                iterations = get_num_splits(podcast_df, True, k=1)
                 current_iteration=1
                 row = {'Story':extract_details_from_file_name(podcast)}
                 # row = {'Story':"merged"}

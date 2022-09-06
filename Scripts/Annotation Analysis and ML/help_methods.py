@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import random
 import pandas as pd
 from os import listdir
 import matplotlib.pyplot  as plt
@@ -39,12 +40,16 @@ def balance_data(df, sents, method=None):
         # print(f'value count after {method} sampling: {y_res.value_counts()}')
         return res
     return df
-
+def single_split_iterator (df):
+    random.seed(10)   
+    index = random.randint(0, len(df))
+    episode_name = df.iloc[[index]]['episodeName']
+    test_idx = df.index[df["episodeName"]==episode_name].tolist()
+    train_idx = df.index[df["episodeName"]!=episode_name].tolist()
+    yield (train_idx,test_idx)
 def split_data_using_cross_validation(df, sentitment,n_splits=5, random_split=False):
     if n_splits == 1:
-        groups = df["episodeName"].to_numpy()
-        logo = LeaveOneGroupOut()
-        return logo.split(df, df[sentitment],groups=groups)
+        single_split_iterator(df)
     elif random_split == False:
         groups = df["episodeName"].to_numpy()
         logo = LeaveOneGroupOut()
