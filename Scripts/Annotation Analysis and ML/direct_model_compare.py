@@ -20,7 +20,7 @@ def run():
         os.makedirs(tmp_Results_dir)
         for podcast in get_podcasts_from_folder(): # get all csv files from the given folder in constants file
             total_predictions_df=pd.DataFrame()
-            podcast_df = process_tokens_dataframe(podcast,sents=sents, smoothed=False)
+            podcast_df = process_tokens_dataframe(podcast,sents=sents,filter_ones=True, smoothed=True)
             for s in sents:
                 print_and_log(log,f"*************** {s} *******************")
                 pre_processed_df=podcast_df.copy(deep=True)
@@ -43,12 +43,12 @@ def run():
                 nn_models = [SNN,uniLSTM, BiLSTM]
         
                 print_and_log(log,f"{podcast}")
-                iterations = get_num_splits(podcast_df, True)
+                iterations = get_num_splits(podcast_df, True, k=2)
                 current_iteration=1
                 row = {'Story':extract_details_from_file_name(podcast)}
                 # row = {'Story':"merged"}
                 accumulatedData ={}
-                for train_indexes, test_indexes in split_data_using_cross_validation(podcast_df, s,n_splits=1,random_split= True): # true for random split
+                for train_indexes, test_indexes in split_data_using_cross_validation(podcast_df, s,n_splits=2,random_split= True): # true for random split
                     print (f"iteration {current_iteration} out of {iterations}.")
                     train_split_df = podcast_df.iloc[train_indexes]
                     test_split_df = podcast_df.iloc[test_indexes]

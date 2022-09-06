@@ -11,7 +11,7 @@ import seaborn as sns
 from datetime import datetime
 from constants import *
 
-def process_tokens_dataframe(file_path, sents, smoothed=False):
+def process_tokens_dataframe(file_path, sents, smoothed=False, filter_ones =True):
     df = pd.read_csv(os.path.join(data_path,f"{file_path}"),index_col=0)
     label_cols = df.columns.intersection(all_emotions)
     labels = df[label_cols]
@@ -19,7 +19,8 @@ def process_tokens_dataframe(file_path, sents, smoothed=False):
         smooth_labels(labels, factor=0.1)
     df[label_cols] = labels
     filtered_df = df[df[sents].notnull().all(1)] # right now it checks that all the sentiments exist - will be changed to check that any of them exists
-    filtered_df = filtered_df[filtered_df["Sadness"] != 1]
+    if filter_ones == True:
+        filtered_df = filtered_df[filtered_df["Sadness"] != 1]
     return filtered_df
 
 def balance_data(df, sents, method=None):
