@@ -42,17 +42,30 @@ def plot_predictions(predictions_path, results_dir):
     plt.show()
     fig.savefig(f"{results_dir}/predictions.png")
 
+    #scatter_plot
+    x_uLSTM = df['uLSTM']
+    plt.scatter(x_uLSTM, y_val)
+    plt.xlabel('Y_hat')
+    plt.ylabel('Y_Real')
+    plt.legend()
+    plt.plot(x_uLSTM, x_uLSTM, color='black', label= 'x=y')
+    plt.show()
+
 def plot_model_comparison(comparison_path, results_dir):
     results = pd.read_csv(comparison_path)
-
     # 1st figure - performance using different layers
     fig, axes = plt.subplots(1, 2)
     fig.suptitle("Model Performance Using Different Layers")
-    results.plot.bar(x='Story', y=[col for col in results.columns if 'rmse' in col], ax=axes[0])
+    color_dict_rmse = {"SNN_rmse":"#77CCFF", "uLSTM_rmse" : "#55AAFF", "BiLSTM_rmse" : "#3388FF", "Linear_rmse": "#0066FF", "BL_rmse" : "#0044FF"}
+    results.plot.bar(x='Story', y=[col for col in results.columns if 'rmse' in col], color=color_dict_rmse, ax=axes[0])
     axes[0].set_title('RMSE')
-    results.plot.bar(x='Story', y=[col for col in results.columns if 'r_square' in col], ax=axes[1])
-    axes[1].set_title('R Sqaure')
+    color_dict_r_square = {"SNN_r_square_correlation":"#77CCFF", "uLSTM_r_square_correlation" : "#55AAFF", "BiLSTM_r_square_correlation" : "#3388FF", "Linear_r_square_correlation": "#0066FF", "BL_r_square_correlation" : "#0044FF"}
+    results.plot.bar(x='Story', y=[col for col in results.columns if 'r_square' in col], color= color_dict_r_square, ax=axes[1])
+    axes[1].set_title('R Square')
     plt.rcParams.update({'font.size': 6})
+    axes[0].tick_params(axis='x', labelsize=5.5)
+    axes[1].tick_params(axis='x', labelsize=5.5)
+    plt.tight_layout()
     fig.savefig(f"{results_dir}/layers.png")
 
     # 2nd figure - performance using different models
@@ -65,7 +78,12 @@ def plot_model_comparison(comparison_path, results_dir):
     rmse_t = rmse_df.transpose()
     rmse_t.columns = rmse_t.iloc[-1]
     rmse_t.drop(rmse_t.tail(1).index, inplace=True)
-    rmse_t.plot.bar(ax=axes[0])
+    story = rmse_df['Story']
+    if len(story) == 1:
+        rmse_t.plot.bar(ax=axes[0], color="#3388FF")
+    else:
+        color_dict = {story[0]: "#77CCFF", story[1]: "#55AAFF", story[2]: "#3388FF", story[3]: "#0066FF"}
+        rmse_t.plot.bar(ax=axes[0], color=color_dict)
     axes[0].set_title('RMSE')
 
     rsq_df = results[[col for col in results.columns if 'r_square' in col]]
@@ -74,13 +92,18 @@ def plot_model_comparison(comparison_path, results_dir):
     rsq_t = rsq_df.transpose()
     rsq_t.columns = rsq_t.iloc[-1]
     rsq_t.drop(rsq_t.tail(1).index, inplace=True)
-    rsq_t.plot.bar(ax=axes[1])
+    if len(story) == 1:
+        rsq_t.plot.bar(ax=axes[1], color="#3388FF")
+    else:
+        color_dict = {story[0]: "#77CCFF", story[1]: "#55AAFF", story[2]: "#3388FF", story[3]: "#0066FF"}
+        rsq_t.plot.bar(ax=axes[1], color=color_dict)
     axes[1].set_title('R Square')
-
     plt.rcParams.update({'font.size': 6})
     fig.savefig(f"{results_dir}/models.png")
 
 
 if __name__ == '__main__':
-    plot_predictions('C:\\Users\\Yuli\\Documents\\Uni\\test-plot.csv', 'C:\\Users\\Yuli\\Documents\\Uni')
-    plot_model_comparison('C:\\Users\\Yuli\\Documents\\Uni\\comparison-test.csv', 'C:\\Users\\Yuli\\Documents\\Uni')
+    plot_predictions('C:\\Users\\mayas\\PycharmProjects\\Sagol-project-emotion-classification\\test-plot.csv',
+                     "C:\\Users\\mayas\\PycharmProjects\\Sagol-project-emotion-classification\\plots")
+    plot_model_comparison('C:\\Users\\mayas\\PycharmProjects\\Sagol-project-emotion-classification\\comparison-test.csv'
+                          , "C:\\Users\\mayas\\PycharmProjects\\Sagol-project-emotion-classification\\plots")
