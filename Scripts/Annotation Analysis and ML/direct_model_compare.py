@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import numpy as np
 from help_methods import *
 from pre_test_model_evaluation import *
 from model_class import MLmodel
@@ -53,8 +54,6 @@ def run():
                     train_split_df = podcast_df.iloc[train_indexes]
                     test_split_df = podcast_df.iloc[test_indexes]
                     train_split_df,test_split_df = post_split_process(train_split_df,test_split_df,s)
-                    train_split_df.to_csv(f"train_split_df-check_iter_{current_iteration}.csv")
-                    test_split_df.to_csv(f"test_split_df-check_iter_{current_iteration}.csv")
                     total_predictions_df['Real'+ "_"+str(current_iteration)+" iteration"]= test_split_df[s]
                     Linear.fit_elastic(train_split_df)
                     Linear.predict_elastic(test_split_df)
