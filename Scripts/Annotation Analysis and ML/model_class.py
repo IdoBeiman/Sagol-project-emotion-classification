@@ -9,7 +9,7 @@ from tensorflow import keras
 import numpy as np
 from sklearn import linear_model, metrics
 from math import sqrt
-from keras import backend
+from keras import backend, metrics
 from sklearn.metrics import mean_squared_error, r2_score
 
 class MLmodel:
@@ -51,7 +51,7 @@ class MLmodel:
             new_model.add(Bidirectional(LSTM(self.n3, stateful=True, return_sequences=True, activation=self.ac_func)))
         new_model.add(Dense(1))
         opt = keras.optimizers.Adam(learning_rate=0.001)
-        new_model.compile(loss=rmse, optimizer=opt)
+        new_model.compile(loss=rmse, optimizer=opt, metrics =[metrics.RootMeanSquaredError()])
         return new_model
 
     def fit_NN(self, train_df,show_progress=False, n_epochs=8):
@@ -120,10 +120,10 @@ class MLmodel:
         return self
 def rmse(y_true, y_pred):
 	return backend.sqrt(backend.mean(backend.square(y_pred - y_true), axis=-1))
-def create_model_for_grid_dense(dropout_rate,activation,weight_constraint,optimizer,initializer,input_shape, layer_1_neurons, layer_2_neurons,optimizer_grid_search=False):
+def create_model_for_grid_dense(dropout_rate,activation,optimizer,initializer,input_shape, layer_1_neurons, layer_2_neurons,optimizer_grid_search=False):
 	# create model
     model = Sequential()
-    model.add(Dense(layer_1_neurons,kernel_initializer=initializer,input_shape=input_shape, activation=activation,  kernel_constraint=MaxNorm(weight_constraint)))
+    model.add(Dense(layer_1_neurons,kernel_initializer=initializer,input_shape=input_shape, activation=activation))
     model.add(Dropout(dropout_rate))
     model.add(Dense(layer_2_neurons, activation=activation,kernel_initializer=initializer))
     model.add(Dense(1,kernel_initializer=initializer))
