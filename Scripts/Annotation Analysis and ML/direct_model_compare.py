@@ -53,8 +53,8 @@ def run():
                     train_split_df = podcast_df.iloc[train_indexes]
                     test_split_df = podcast_df.iloc[test_indexes]
                     train_split_df,test_split_df = post_split_process(train_split_df,test_split_df,s)
-                    train_split_df.to_csv("train_check.csv")
-                    test_split_df.to_csv("test_split_df-check.csv")
+                    train_split_df.to_csv(f"train_split_df-check_iter_{current_iteration}.csv")
+                    test_split_df.to_csv(f"test_split_df-check_iter_{current_iteration}.csv")
                     total_predictions_df['Real'+ "_"+str(current_iteration)+" iteration"]= test_split_df[s]
                     Linear.fit_elastic(train_split_df)
                     Linear.predict_elastic(test_split_df)
