@@ -4,7 +4,7 @@ import random
 import pandas as pd
 from os import listdir
 import matplotlib.pyplot  as plt
-from sklearn.model_selection import LeaveOneGroupOut, KFold,GroupKFold,train_test_split
+from sklearn.model_selection import LeaveOneGroupOut, KFold,GroupKFold,StratifiedKFold
 from sklearn.metrics import accuracy_score
 from imblearn.under_sampling import RandomUnderSampler
 from imblearn.over_sampling import RandomOverSampler
@@ -46,26 +46,29 @@ def balance_data(df, sents, method=None):
 #     test_idx = np.where(df["episodeName"] == episode_name)
 #     train_idx = np.where(df["episodeName"] != episode_name)
 #     yield (train_idx,test_idx)
-
-def split_data_using_cross_validation(df, sentitment,n_splits=3, random_split=False):
-    # if n_splits == 1:
-    #     return single_split_iterator(df)
-    if random_split == False:
+def targets_to_bins(df,sentiment):
+    bins = [0,3,5,7]
+    labels = [1.0,2.0,3.0]
+    df[sentiment] = pd.cut(df[sentiment], bins=bins, labels=labels)
+    return df
+def split_data_using_cross_validation(df, sentitment,n_splits=3,split_type="groupKfold"):
+    if split_type == "groupKfold":
         groups = df["episodeName"].to_numpy()
         logo = GroupKFold(n_splits)
         return logo.split(df, df[sentitment],groups=groups)
+    elif split_type == "group_balanced_k_fold":
+        # df= targets_to_bins(df,sentitment)
+        skf = StratifiedKFold(n_splits=n_splits)
+        return skf.split(df, df.loc[:,sentitment])
     else:
         Kfold = KFold(n_splits)
         return Kfold.split(df, df[sentitment])
 
-def get_num_splits(df, random_split=False,k=5):
-    if random_split == False:
-        groups = df["episodeName"].to_numpy()
-        logo = GroupKFold()
-        iterations = logo.get_n_splits(groups=groups)
-        return iterations
-    else:
-        return k
+def get_num_splits(df,n_splits):
+    groups = df["episodeName"].to_numpy()
+    logo = GroupKFold(n_splits)
+    iterations = logo.get_n_splits(groups=groups)
+    return iterations
 def get_grid_params(model_type):
     if model_type == "":
         return None

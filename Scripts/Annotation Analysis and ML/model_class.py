@@ -15,7 +15,7 @@ from sklearn.metrics import mean_squared_error, r2_score
 class MLmodel:
 
     models = []
-    def __init__(self, n1=0,n2=0,n3=0,d_o=0.1,ac_func="tanh",model_type="",n_epochs=10,name="",initializer="",weight_constraint=""):
+    def __init__(self, n1=0,n2=0,n3=0,d_o=0.1,ac_func="tanh",model_type="",n_epochs=30,name="",initializer="",weight_constraint=""):
         self.n1 = n1
         self.n2 = n2
         self.n3=n3
@@ -59,15 +59,9 @@ class MLmodel:
         X = train_df.drop([predicted_sentiment], axis=1)
         X = X.values.reshape(X.shape[0], 1, X.shape[1])
         model = self.init_model(X)
-        # history = []
-        # for i in range(self.n_epochs):
-        #     tmp_history = model.fit(X, np.asarray(y),epochs=5, batch_size=1, verbose=show_progress, shuffle=False)
-        #     history.append(tmp_history.history)
-        #     model.reset_states()
         model.fit(X, np.asarray(y),epochs=self.n_epochs, batch_size=1, verbose=show_progress, shuffle=False)
         self.model = model
         self.param_num = model.count_params()
-        # self.history = history
 
     def predict_NN(self, test_df, batch_size=1):
         predictions = list()
