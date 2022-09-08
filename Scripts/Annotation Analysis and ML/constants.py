@@ -5,7 +5,7 @@ import os
 feat_vec = [str(i) for i in range(0, 768)]
 
 # which sentiment are we learning on
-predicted_sentiment = "Nostalgia"
+predicted_sentiment = "Sadness"
 
 model_types = ["dense","uniLSTM","BiLSTM"]
 

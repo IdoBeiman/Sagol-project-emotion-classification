@@ -9,13 +9,13 @@ from tensorflow import keras
 import numpy as np
 from sklearn import linear_model, metrics
 from math import sqrt
-from keras import backend
+from keras import backend, metrics
 from sklearn.metrics import mean_squared_error, r2_score
 
 class MLmodel:
 
     models = []
-    def __init__(self, n1=0,n2=0,n3=0,d_o=0.1,ac_func="tanh",model_type="",n_epochs=8,name="",initializer="",weight_constraint=""):
+    def __init__(self, n1=0,n2=0,n3=0,d_o=0.1,ac_func="tanh",model_type="",n_epochs=30,name="",initializer="",weight_constraint=""):
         self.n1 = n1
         self.n2 = n2
         self.n3=n3
@@ -50,30 +50,24 @@ class MLmodel:
             new_model.add(Dropout(self.d_o))
             new_model.add(Bidirectional(LSTM(self.n3, stateful=True, return_sequences=True, activation=self.ac_func)))
         new_model.add(Dense(1))
-        opt = keras.optimizers.Adam(learning_rate=0.001)
-        new_model.compile(loss=rmse, optimizer=opt)
+        # opt = keras.optimizers.Adam(learning_rate=0.001)
+        new_model.compile(loss=rmse, optimizer="adam", metrics =[metrics.RootMeanSquaredError()])
         return new_model
 
-    def fit_NN(self, train_df,show_progress=False, n_epochs=8):
+    def fit_NN(self, train_df,show_progress=True):
         y = train_df[predicted_sentiment]
         X = train_df.drop([predicted_sentiment], axis=1)
         X = X.values.reshape(X.shape[0], 1, X.shape[1])
         model = self.init_model(X)
-        history = []
-        for i in range(self.n_epochs):
-            tmp_history = model.fit(X, np.asarray(y), epochs=1, batch_size=1, verbose=show_progress, shuffle=False)
-            history.append(tmp_history.history)
-            model.reset_states()
+        model.fit(X, np.asarray(y),epochs=self.n_epochs, batch_size=1, verbose=show_progress, shuffle=False)
         self.model = model
         self.param_num = model.count_params()
-        self.history = history
 
-    def predict_NN(self, test_df):
+    def predict_NN(self, test_df, batch_size=1):
         predictions = list()
         for i in range(len(test_df)):
-            y = test_df[predicted_sentiment]
-            X =  test_df.drop([predicted_sentiment], axis=1).loc[i]
-            yhat = forecast_lstm(self.model, 1, X)
+            X =  test_df.drop([predicted_sentiment], axis=1).iloc[i]
+            yhat = forecast_lstm(self.model, batch_size, X)
             if yhat is None:
                 print ("none")
             predictions.append(yhat.item())
@@ -120,10 +114,10 @@ class MLmodel:
         return self
 def rmse(y_true, y_pred):
 	return backend.sqrt(backend.mean(backend.square(y_pred - y_true), axis=-1))
-def create_model_for_grid_dense(dropout_rate,activation,weight_constraint,optimizer,initializer,input_shape, layer_1_neurons, layer_2_neurons,optimizer_grid_search=False):
+def create_model_for_grid_dense(dropout_rate,activation,optimizer,initializer,input_shape, layer_1_neurons, layer_2_neurons,optimizer_grid_search=False):
 	# create model
     model = Sequential()
-    model.add(Dense(layer_1_neurons,kernel_initializer=initializer,input_shape=input_shape, activation=activation,  kernel_constraint=MaxNorm(weight_constraint)))
+    model.add(Dense(layer_1_neurons,kernel_initializer=initializer,input_shape=input_shape, activation=activation))
     model.add(Dropout(dropout_rate))
     model.add(Dense(layer_2_neurons, activation=activation,kernel_initializer=initializer))
     model.add(Dense(1,kernel_initializer=initializer))
