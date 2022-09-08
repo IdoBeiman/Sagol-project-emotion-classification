@@ -3,6 +3,9 @@ import seaborn as sns
 import pandas as pd
 
 def plot_predictions(predictions_path, results_dir):
+    sns.set()
+    sns.set_theme(style="whitegrid", font="Times New Roman")
+    sns.color_palette("bright")
 
     results = pd.read_csv(predictions_path)
     results.drop(['Unnamed: 0'], axis=1, inplace=True)
@@ -19,7 +22,7 @@ def plot_predictions(predictions_path, results_dir):
     y_val = df['Real']
     y_bl = df['BL']
 
-    fig, ax = plt.subplots(2, 2, figsize=(15, 10))
+    fig, ax = plt.subplots(2, 2, figsize=(15, 10), gridspec_kw={'hspace': 0.1, 'wspace': 0.1})
     sns.despine(left=True, bottom=True)
     fig.suptitle('')
     i = 0
@@ -43,17 +46,38 @@ def plot_predictions(predictions_path, results_dir):
     fig.savefig(f"{results_dir}/predictions.png")
 
     #scatter_plot
-    x_uLSTM = df['uLSTM']
-    plt.scatter(x_uLSTM, y_val)
-    plt.xlabel('Y_hat')
-    plt.ylabel('Y_Real')
-    plt.legend()
-    plt.plot(x_uLSTM, x_uLSTM, color='black', label= 'x=y')
-    plt.show()
+    #x_uLSTM = df['uLSTM']
+    #plt.scatter(x_uLSTM, y_val)
+    #plt.xlabel('Y_hat')
+    #plt.ylabel('Y_Real')
+    #plt.legend()
+    #plt.plot(x_uLSTM, x_uLSTM, color='black', label= 'x=y')
+    #plt.show()
+
+#def plot_model_comparison_try(comparison_path, results_dir):
+    #results = pd.read_csv(comparison_path)
+    #results.drop(['Unnamed: 0'], axis=1, inplace=True)
+    #sns.set_theme(style="whitegrid", font="Times New Roman")
+    #ax = sns.boxplot(data=results.drop('Story', axis=1), palette="Set1")
+    #ax.axes.set_title("Model Comparison", fontsize=25)
+    #sns.despine(left=True, bottom=True)
+    #sns.set(rc={'figure.figsize': (8, 6), "font.size": 50})
+    #ax.set_xlabel("Models", size=18)
+    #ax.set_ylabel("Mean RMSE Per Story", size=18)
+    #ax.set(xlabel="Models", ylabel="Mean RMSE Per Podcast")
+    #sns.set(font_scale=2)
+    #fig = ax.get_figure()
+    #fig.savefig(f"{results_dir}/models_try.png")
+
 
 def plot_model_comparison(comparison_path, results_dir):
     results = pd.read_csv(comparison_path)
-    # 1st figure - performance using different layers
+    color_dict_rmse = {"SNN_rmse":"#77CCFF", "uLSTM_rmse" : "#55AAFF", "BiLSTM_rmse" : "#3388FF", "Linear_rmse": "#0066FF", "BL_rmse" : "#0044FF"}
+    fig1, axes = plt.subplots(1, 1)
+    fig1.suptitle("Model Performance Using RMSE")
+    results.plot.bar(x='Story', y=[col for col in results.columns if 'rmse' in col], color=color_dict_rmse, ax=axes)
+    plt.tight_layout()
+    fig1.savefig(f"{results_dir}/RMSE_performance.png")# 1st figure - performance using different layers
     fig, axes = plt.subplots(1, 2)
     fig.suptitle("Model Performance Using Different Layers")
     color_dict_rmse = {"SNN_rmse":"#77CCFF", "uLSTM_rmse" : "#55AAFF", "BiLSTM_rmse" : "#3388FF", "Linear_rmse": "#0066FF", "BL_rmse" : "#0044FF"}
@@ -105,5 +129,5 @@ def plot_model_comparison(comparison_path, results_dir):
 if __name__ == '__main__':
     plot_predictions('C:\\Users\\mayas\\PycharmProjects\\Sagol-project-emotion-classification\\test-plot.csv',
                      "C:\\Users\\mayas\\PycharmProjects\\Sagol-project-emotion-classification\\plots")
-    plot_model_comparison('C:\\Users\\mayas\\PycharmProjects\\Sagol-project-emotion-classification\\comparison-test.csv'
-                          , "C:\\Users\\mayas\\PycharmProjects\\Sagol-project-emotion-classification\\plots")
+    plot_model_comparison('C:\\Users\\mayas\\PycharmProjects\\Sagol-project-emotion-classification\\comparison-test.csv', "C:\\Users\\mayas\\PycharmProjects\\Sagol-project-emotion-classification\\plots")
+    #plot_model_comparison_try('C:\\Users\\mayas\\PycharmProjects\\Sagol-project-emotion-classification\\comparison-test.csv',"C:\\Users\\mayas\\PycharmProjects\\Sagol-project-emotion-classification\\plots")
