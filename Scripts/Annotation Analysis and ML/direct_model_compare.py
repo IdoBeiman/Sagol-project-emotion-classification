@@ -44,13 +44,14 @@ def run():
                 nn_models = [SNN,uniLSTM, BiLSTM]
         
                 print_and_log(log,f"{podcast}")
-                iterations = get_num_splits(podcast_df,k=1)
+                # iterations = get_num_splits(podcast_df,n_splits=3)
                 current_iteration=0
                 row = {'Story':extract_details_from_file_name(podcast)}
                 # row = {'Story':"merged"}
                 accumulatedData ={}
-                for train_indexes, test_indexes in split_data_using_cross_validation(podcast_df, s,n_splits=3,random_split= True):
-                    print (f"iteration {current_iteration} out of {iterations}.")
+                for train_indexes, test_indexes in split_data_using_cross_validation(podcast_df, s,n_splits=3,split_type="group_balanced_k_fold"):
+                    current_iteration +=1
+                    print (f"iteration {current_iteration}.")
                     train_split_df = podcast_df.iloc[train_indexes]
                     test_split_df = podcast_df.iloc[test_indexes]
                     train_split_df,test_split_df = post_split_process(train_split_df,test_split_df,s)
@@ -82,7 +83,6 @@ def run():
                             accumulatedData[model.name+"_r_square_correlation"]=0
                             accumulatedData[model.name+"_r_square_correlation"] += model.calculate_r_squared_error(test_split_df_copy[s])
                         total_predictions_df[model.name+"_"+" iteration_"+str(current_iteration)] = pd.Series(model.predictions)
-                    current_iteration +=1
                 for model in MLmodel.models: # after we finished the cross validation iterations we will divide the accumlated error by the number of iterations
                     row[model.name+"_rmse"] =  accumulatedData[model.name+"_rmse"]/current_iteration
                     row[model.name+"_r_square_correlation"] =  accumulatedData[model.name+"_r_square_correlation"]/current_iteration
