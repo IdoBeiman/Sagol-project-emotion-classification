@@ -71,9 +71,6 @@ class DirectModelCompare:
                         else:
                             print_and_log(f'Invalid model type: {model}')
 
-                    # nn_models = [SNN, uniLSTM, BiLSTM]
-                    # nn_models = [model for model in MLmodel.models if model.name not in ['Linear', 'BL']]
-
                     row = {'story': f'{self.extract_details_from_file_name(file)}_{s}'}
                     accumulated_data = {}
 
@@ -113,16 +110,19 @@ class DirectModelCompare:
 
                             current_sent_predictions[f'{model.name}_iteration_{str(current_iteration)}'] = pd.Series(model.predictions)
                     
-                    for model in MLmodel.models: # after we finished the cross validation iterations we will divide the accumlated error by the number of iterations
+                    for model in MLmodel.models:
+                    # after we finished the cross validation iterations we will divide the accumlated error
+                    # by the number of iterations
                         row[f'{model.name}_rmse'] = accumulated_data[f'{model.name}_rmse'] / N_SPLITS
                         row[f'{model.name}_r_square'] = accumulated_data[f'{model.name}_r_square'] / N_SPLITS
 
                     current_sent_model_eval = current_sent_model_eval.append(row, ignore_index=True)
                     current_file_model_eval = current_file_model_eval.append(row, ignore_index=True)
                     all_files_model_eval = all_files_model_eval.append(row, ignore_index=True)
+
                     predictions_file_name = f"{current_sent_result_dir}/{run_details}_{s}_model_predictions.csv"
-                    current_sent_predictions.to_csv(predictions_file_name, mode='w', header=True)   # predictions per file
-                    current_sent_model_eval.to_csv(f"{current_sent_result_dir}/{run_details}_{s}_models_comparison.csv", mode='w', header=True) # merged csv for all of the podcasts
+                    current_sent_predictions.to_csv(predictions_file_name, mode='w', header=True)
+                    current_sent_model_eval.to_csv(f"{current_sent_result_dir}/{run_details}_{s}_models_comparison.csv", mode='w', header=True)
 
                 current_file_model_eval.to_csv(f'{current_file_result_dir}/{run_details}_all_sentiments_models_comparison,csv', mode='w', header=True)
 
@@ -142,6 +142,7 @@ class DirectModelCompare:
         layer = f'layer-{filename.split("layer_")[1].split("_")[0]}'
         operation = filename.split("operation_")[1].split("_")[0]
         return f'{model}_{layer}_{operation}_{sub}'
+
 
 if __name__ == '__main__':
     DirectModelCompare().run()

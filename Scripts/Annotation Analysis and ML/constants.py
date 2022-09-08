@@ -1,8 +1,8 @@
 import os
 
 # **** PATHS ****
-# ML_INPUT_DIR = "./Tokenized_data"
-ML_INPUT_DIR = 'C:\\Users\\Yuli\\Documents\\Uni\\Sagol-project-emotion-classification\\Tokenized_data'
+ML_INPUT_DIR = "./Tokenized_data"
+# ML_INPUT_DIR = 'C:\\Users\\Yuli\\Documents\\Uni\\Sagol-project-emotion-classification\\Tokenized_data'
 
 ROOT = os.path.join(os.getcwd(), "\debug")
 
