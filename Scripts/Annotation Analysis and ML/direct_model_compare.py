@@ -74,6 +74,7 @@ class DirectModelCompare:
                     row = {'story': f'{self.extract_details_from_file_name(file)}_{s}'}
                     accumulated_data = {}
 
+                    num_iter = get_num_splits(current_sent_df)
                     current_iteration = 0
                     
                     for train_indexes, test_indexes in split_data_using_cross_validation(current_sent_df.copy(deep=True), s):
@@ -84,11 +85,13 @@ class DirectModelCompare:
                         train_split_df, test_split_df = post_split_process(train_split_df, test_split_df, s)
                         current_sent_predictions[f'real_{str(current_iteration)}_iteration'] = test_split_df[s]
 
-                        Linear.fit_elastic(train_split_df.copy(deep=True))
-                        Linear.predict_elastic(test_split_df.copy(deep=True))
+                        if 'Linear' in MODELS:
+                            Linear.fit_elastic(train_split_df, s)
+                            Linear.predict_elastic(test_split_df, s)
 
-                        Baseline.fit_baseline(train_split_df.copy(deep=True))
-                        Baseline.predict_baseline(test_split_df.copy(deep=True))
+                        if 'Baseline' in MODELS:
+                            Baseline.fit_baseline(train_split_df, s)
+                            Baseline.predict_baseline(test_split_df, s)
 
                         for model in nn_models:
                             model.fit_NN(train_split_df.copy(deep=True), s)
@@ -113,8 +116,8 @@ class DirectModelCompare:
                     for model in MLmodel.models:
                     # after we finished the cross validation iterations we will divide the accumlated error
                     # by the number of iterations
-                        row[f'{model.name}_rmse'] = accumulated_data[f'{model.name}_rmse'] / N_SPLITS
-                        row[f'{model.name}_r_square'] = accumulated_data[f'{model.name}_r_square'] / N_SPLITS
+                        row[f'{model.name}_rmse'] = accumulated_data[f'{model.name}_rmse'] / num_iter
+                        row[f'{model.name}_r_square'] = accumulated_data[f'{model.name}_r_square'] / num_iter
 
                     current_sent_model_eval = current_sent_model_eval.append(row, ignore_index=True)
                     current_file_model_eval = current_file_model_eval.append(row, ignore_index=True)

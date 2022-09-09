@@ -7,8 +7,7 @@ ML_INPUT_DIR = "./Tokenized_data"
 ROOT = os.path.join(os.getcwd(), "\debug")
 
 # **** CONFIGURATION ****
-PREDICTED_SENTIMENT = "Sadness"
-PREDICTED_SENTIMENTS = ['Sadness']
+PREDICTED_SENTIMENTS = ['Sadness', 'Calmness']
 
 MODELS = ["SNN", "uniLSTM", "BiLSTM", "Linear", "Baseline"]
 

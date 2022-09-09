@@ -81,33 +81,35 @@ class MLmodel:
     def calculate_r_square(self, y):
         return r2_score(y, self.predictions)
 
-    def fit_baseline(self, train_df):
-        mode = train_df[PREDICTED_SENTIMENT].mode().loc[0]
+    def fit_baseline(self, train_df, sent):
+        mode = train_df[sent].mode().loc[0]
         self.model = mode
 
-    def predict_baseline(self, test_df):
+    def predict_baseline(self, test_df, sent):
         self.predictions = [self.model for i in range(len(test_df))]
 
+    # unused?
     def fit_bayesRidge(self, train_df):
         model = linear_model.BayesianRidge(normalize = True)
         y = train_df[PREDICTED_SENTIMENT]
         X = train_df.drop([PREDICTED_SENTIMENT], axis=1)
-
         self.model = model.fit(X, y)
         
-    def fit_elastic(self, train_df):
-        model = linear_model.ElasticNet(normalize = True)
-        y = train_df[PREDICTED_SENTIMENT]
-        X = train_df.drop([PREDICTED_SENTIMENT], axis=1)
-
+    def fit_elastic(self, train_df, sent):
+        df = train_df.copy(deep=True)
+        model = linear_model.ElasticNet(normalize=True)
+        y = df[sent]
+        X = df.drop([s for s in PREDICTED_SENTIMENTS if s in df.columns], axis=1)
         self.model = model.fit(X, y)
 
+    # unused?
     def predict_bayesRidge(self, test_df):
         BRPrediction = self.model.predict(test_df.drop([PREDICTED_SENTIMENT], axis=1))
         self.predictions = BRPrediction
 
-    def predict_elastic(self, test_df):
-        elasticPrediction = self.model.predict(test_df.drop([PREDICTED_SENTIMENT], axis=1))
+    def predict_elastic(self, test_df, sent):
+        df = test_df.copy(deep=True)
+        elasticPrediction = self.model.predict(df.drop([sent], axis=1))
         self.predictions = elasticPrediction
 
     def get_params(self, deep=True):

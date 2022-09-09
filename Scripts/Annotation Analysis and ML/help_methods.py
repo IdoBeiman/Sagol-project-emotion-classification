@@ -90,11 +90,10 @@ def split_data_using_cross_validation(df, sentitment, n_splits=N_SPLITS, split_t
 
 def get_num_splits(df):
     if CV_SPLIT_METHOD == 'GroupKfold':
-        pass
-        # NEED TO DO SOMETHING ELSE?
-        # groups = df["episodeName"].to_numpy()
-        # logo = GroupKFold(n_splits)
-        # iterations = logo.get_n_splits(groups=groups)
+        groups = df["episodeName"].to_numpy()
+        logo = GroupKFold(N_SPLITS)
+        iterations = logo.get_n_splits(groups=groups)
+        return iterations
     return N_SPLITS
 
 
@@ -156,26 +155,22 @@ def plot_model_comparison(predictions_dir):
     return
 
 
-def calcualte_model_accuracy (real_values, predictions ):
-    acc = accuracy_score(real_values,predictions)
-
 def trim_file_extension(filename):
     return filename.split(".")[0]
     
 
-def post_split_process(train_df, test_df,sentiment, filter_ones = True): # filtering out 1 ranking which means the sentiment didn't appear in the segment
+def post_split_process(train_df, test_df, sentiment, filter_ones = True): # filtering out 1 ranking which means the sentiment didn't appear in the segment
     test_df.drop(["episodeName"], axis=1, inplace=True)
     test_df.reset_index(drop=True, inplace=True)
     train_df.drop(["episodeName"], axis=1, inplace=True)
     train_df.reset_index(drop=True, inplace=True)
-    to_remove = ALL_SENTIMENTS
-    if sentiment in to_remove:
-        to_remove.remove(sentiment)
-    train_df.drop([col for col in train_df.columns if   col in to_remove], axis=1, inplace=True)
-    test_df.drop([col for col in test_df.columns if col in to_remove ], axis=1, inplace=True)
+    to_remove = [sent for sent in ALL_SENTIMENTS if sent != sentiment]
+    # if sentiment in to_remove:
+    #     to_remove.remove(sentiment)
+    train_df.drop([col for col in train_df.columns if col in to_remove], axis=1, inplace=True)
+    test_df.drop([col for col in test_df.columns if col in to_remove], axis=1, inplace=True)
     train_df = balance_data(train_df, sentiment)
-
-    return train_df,test_df
+    return train_df, test_df
 
 
 def plot_predictions(prediction_file_name, result_dir):
@@ -188,7 +183,7 @@ def plot_predictions(prediction_file_name, result_dir):
     results.drop(['Unnamed: 0','Real'],axis=1,inplace=True)
     models = [m for m in results.columns if m!="BL"]
     
-    fig,a =  plt.subplots(2,2,figsize=(15, 5),gridspec_kw={'hspace': 0.1, 'wspace': 0.1})
+    fig, a = plt.subplots(2,2,figsize=(15, 5),gridspec_kw={'hspace': 0.1, 'wspace': 0.1})
     sns.despine(left=True, bottom=True)
     fig.suptitle(f'{prediction_file_name}')
     i = 0
@@ -213,12 +208,6 @@ def plot_predictions(prediction_file_name, result_dir):
     fig.savefig(f"{result_dir}/predictions.png")
 
 
-def labels_to_bins(df): # one sentiment only
-    bins = [0,3,6,8]
-    labels = bins[1:]
-    df[PREDICTED_SENTIMENT] = pd.cut(df[PREDICTED_SENTIMENT], bins=bins, labels=[1, 2, 3])
-
-
 def smooth_labels(labels, factor=0.1):
     # smooth the labels
     labels *= (1 - factor)
@@ -226,6 +215,11 @@ def smooth_labels(labels, factor=0.1):
     # returned the smoothed labels
     return labels
 
+# NEED IDO
+def labels_to_bins(df): # one sentiment only
+    bins = [0,3,6,8]
+    labels = bins[1:]
+    df[PREDICTED_SENTIMENT] = pd.cut(df[PREDICTED_SENTIMENT], bins=bins, labels=[1, 2, 3])
 
 # NEED IDO
 def get_grid_params(model_type):
