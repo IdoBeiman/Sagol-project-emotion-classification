@@ -127,7 +127,7 @@ class DirectModelCompare:
                     current_sent_predictions.to_csv(predictions_file_name, mode='w', header=True)
                     current_sent_model_eval.to_csv(f"{current_sent_result_dir}/{run_details}_{s}_models_comparison.csv", mode='w', header=True)
 
-                current_file_model_eval.to_csv(f'{current_file_result_dir}/{run_details}_all_sentiments_models_comparison,csv', mode='w', header=True)
+                current_file_model_eval.to_csv(f'{current_file_result_dir}/{run_details}_all_sentiments_models_comparison.csv', mode='w', header=True)
 
             all_files_model_eval.to_csv(f"{self.result_dir}/all_files_models_comparison.csv", mode='w', header=True)
 
