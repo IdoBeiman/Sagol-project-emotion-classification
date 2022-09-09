@@ -126,6 +126,9 @@ class DirectModelCompare:
                     predictions_file_name = f"{current_sent_result_dir}/{run_details}_{s}_model_predictions.csv"
                     current_sent_predictions.to_csv(predictions_file_name, mode='w', header=True)
                     current_sent_model_eval.to_csv(f"{current_sent_result_dir}/{run_details}_{s}_models_comparison.csv", mode='w', header=True)
+                    predictions_all_iters = concat_cv_results(current_sent_predictions)
+                    predictions_all_iters.to_csv(f'{current_sent_result_dir}/{run_details}_{s}_predictions_concat.csv')
+                    # calculate r square and rmse on predictions_all_iters and append to current_sent_model_eval, current_file_model_eval, all_files_model_eval
 
                 current_file_model_eval.to_csv(f'{current_file_result_dir}/{run_details}_all_sentiments_models_comparison.csv', mode='w', header=True)
 

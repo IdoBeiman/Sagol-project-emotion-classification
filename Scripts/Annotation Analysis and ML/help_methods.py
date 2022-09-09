@@ -53,6 +53,21 @@ def balance_data(df, sents):
     return df
 
 
+def concat_cv_results(results):
+    try:
+        results.drop(['Unnamed: 0'], axis=1, inplace=True)
+    except Exception:
+        pass
+    iter_num = int(len(results.columns) / 6)
+    df = results.iloc[:, 0:6]
+    df.columns = [col.split('_')[0] for col in df.columns]
+    for i in range(1, iter_num):
+        new_df = results.iloc[:, 0+6*i:6+6*i]
+        new_df.columns = [col.split('_')[0] for col in new_df.columns]
+        df = pd.concat([df, new_df], ignore_index=True)
+    return df
+
+
 # def single_split_iterator(df):
 #     indices = random.sample(range(0, len(df['episodeName'].values)), len((df['episodeName'].values))/5)
 #     test_idx = np.where(df["episodeName"] == episode_name)
