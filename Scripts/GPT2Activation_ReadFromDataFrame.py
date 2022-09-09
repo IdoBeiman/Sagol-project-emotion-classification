@@ -7,7 +7,8 @@ from praatio import textgrid
 from tqdm import tqdm
 import re
 import os
-from transformers import GPT2Model, GPT2LMHeadModel,BertModel, T5Model, GPT2Config,GPT2Tokenizer, BertTokenizer, BertConfig, T5Tokenizer, T5Config
+from transformers import GPT2Model, GPT2LMHeadModel,BertModel, T5Model, GPT2Config,GPT2Tokenizer,\
+    BertTokenizer, BertConfig, T5Tokenizer, T5Config, AutoConfig, AutoModel
 import numpy as np
 
 # initialize tokenizer and model from pretrained GPT2 model
@@ -25,28 +26,30 @@ emotions = ['Admiration', 'Adoration', 'Aesthetic appreciation', 'Amusement', 'A
             'Effort', 'Fairness', 'Identity', 'Upswing']
 
 
-def setup_model(model_name):
+def setup_model(model_name, pre_trained=None):
     os.environ["CURL_CA_BUNDLE"] = ""
-    if model_name.lower() == "gpt" or model_name.lower() == "gpt2":
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    if pre_trained:
+        config = GPT2Config.from_json_file(pre_trained + '/config.json')
+        model = GPT2Model(config=config).from_pretrained(pre_trained).to(device)
+        model.config.output_hidden_states = True
+    elif model_name.lower() == "gpt" or model_name.lower() == "gpt2":
         pretrained = './models_config/pretrained/config.json'
         config = GPT2Config()
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         config = GPT2Config.from_json_file(pretrained)
         model = GPT2Model(config=config).to(device)
     elif model_name.lower() == "bert":
         pretrained = './models_config/pretrained/bert_config.json'
         config = BertConfig()
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         config = BertConfig.from_json_file(pretrained)
         model = BertModel(config=config).to(device)
     elif model_name.lower() == "t5":
         pretrained = './models_config/pretrained/config.json'
         config = T5Config()
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         config = T5Config.from_json_file(pretrained)
         model = T5Model(config=config).to(device)
 
-    max_length = model.config.n_positions
+    # max_length = model.config.n_positions
     return (model, device)
 
 
@@ -69,19 +72,20 @@ def add_textgrid_time_to_activations(df, textgrid_path):
 
 # Output: data frame in size for [num_segments, 768] consists of the <operation> values of the neurons of #LAYER for each of the segments.
 # the mean value is computed by taking the mean of each word activation
-def get_activations_from_csv(dirPath, operation, layer, model_name):
+def get_activations_from_csv(dirPath, operation, layer, model_name, model, device, pre_trained=None):
     if model_name.lower() == "bert":
         tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     elif model_name.lower()=="gpt":
         tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
     elif model_name.lower()=="t5":
         tokenizer = T5Tokenizer.from_pretrained('t5-small')
-    model, device = setup_model(model_name)
+    # model, device = setup_model(model_name, pre_trained)
     os.chdir(dirPath)
     allFiles = glob.glob('*.{}'.format("csv"))
     merged_df = pd.DataFrame()
     for path in allFiles:
-        os.chdir("/data/emotion_project/idomayayuli/codeFolder/source_code/scripts/{}".format(dirPath))
+        os.chdir(dirPath)
+        # os.chdir("/data/emotion_project/idomayayuli/codeFolder/source_code/scripts/{}".format(dirPath))
         sequence = pd.read_csv(path)
         df_embeddings = pd.DataFrame()
         segments_lengths = []
@@ -165,10 +169,16 @@ def get_activations_from_csv(dirPath, operation, layer, model_name):
             grid_path = f'/data/emotion_project/transcriptions/aligned/sub-005/{os.path.splitext(path)[0]}.TextGrid'
             df_embeddings = add_textgrid_time_to_activations(df_embeddings, grid_path)
         merged_df = pd.concat([merged_df, df_embeddings])
-    os.chdir("/data/emotion_project/idomayayuli/codeFolder/source_code/scripts")
-    merged_df.to_csv(
-        'tokenized_files_new/{}_activations_layer_{}_{}_operation_{}_origin_{}_{}_model_{}.csv'.format("data", layer, subject,
-                                                                                              operation, "full","with_context",model_name))
+    os.chdir('C:\\Users\\Yuli\\Documents\\Uni\\sub-005-pre-trained-activations')
+    # os.chdir("/data/emotion_project/idomayayuli/codeFolder/source_code/scripts")
+    if pre_trained:
+        merged_df.to_csv(
+            'tokenized_files_new/{}_activations_layer_{}_{}_operation_{}_origin_{}_{}_model_{}_pre_trained.csv'.format("data", layer, subject,
+                                                                                                           operation, "full", "with_contect", model_name))
+    else:
+        merged_df.to_csv(
+            'tokenized_files_new/{}_activations_layer_{}_{}_operation_{}_origin_{}_{}_model_{}.csv'.format("data", layer, subject,
+                                                                                                  operation, "full","with_context",model_name))
     print("finished creating activations for {}".format(path))
     return df_embeddings
 
@@ -184,20 +194,33 @@ for i in range (8,12):
         activations = get_activations_from_csv(path_all_data, operation, LAYER, True, 'nostalgia')
 print("done")
 """
-for path in ["all_data/labels_with_text/sub-006","all_data","all_data/labels_with_text/sub-007" ]:
 
-    for j in ["t5"]: # note that t5 has only 7 layers
-        for i in range(5, 7):
-            for t in ["mean"]:
-                setup_model(j)
-                operation = t
-                LAYER = i
-                activations = get_activations_from_csv(path, operation, LAYER,j)
-    for j in ["gpt","bert"]:
-        for i in range(8, 12):
-            for t in ["mean"]:
-                setup_model(j)
-                operation = t
-                LAYER = i
-                activations = get_activations_from_csv(path, operation, LAYER,j)
+pre_trained = 'C:\\Users\\Yuli\\Documents\\Uni\\Sagol-project-emotion-classification\\Scripts\\pre_trained_model_2nd'    # path to pre_trained model, else None
+all_subjects_data = ["all_data/labels_with_text/sub-006","all_data","all_data/labels_with_text/sub-007"]
+
+for path in ['C:\\Users\\Yuli\\Documents\\Uni\\sub-005']:
+    if pre_trained:
+        for j in ["gpt"]:
+            for i in range(12):
+                for t in ["mean", "last_word"]:
+                    model, device = setup_model(j, pre_trained)
+                    operation = t
+                    LAYER = i
+                    activations = get_activations_from_csv(path, operation, LAYER, j, model, device, pre_trained)
+
+    else:
+        for j in ["t5"]: # note that t5 has only 7 layers
+            for i in range(5, 7):
+                for t in ["mean"]:
+                    model, device = setup_model(j)
+                    operation = t
+                    LAYER = i
+                    activations = get_activations_from_csv(path, operation, LAYER,j, model, device)
+        for j in ["gpt","bert"]:
+            for i in range(8, 12):
+                for t in ["mean"]:
+                    model, device = setup_model(j)
+                    operation = t
+                    LAYER = i
+                    activations = get_activations_from_csv(path, operation, LAYER,j, model, device)
 print("done")
