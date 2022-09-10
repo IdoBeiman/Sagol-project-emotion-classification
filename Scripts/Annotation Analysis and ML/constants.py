@@ -1,15 +1,14 @@
 import os
 
 # **** PATHS ****
-ML_INPUT_DIR = "./Tokenized_data"
-# ML_INPUT_DIR = 'C:\\Users\\Yuli\\Documents\\Uni\\Sagol-project-emotion-classification\\Tokenized_data'
+# ML_INPUT_DIR = "./Tokenized_data"
+ML_INPUT_DIR = 'C:\\Users\\Yuli\\Documents\\Uni\\Sagol-project-emotion-classification\\Tokenized_data'
 
 ROOT = os.path.join(os.getcwd(), "\debug")
 
 # **** CONFIGURATION ****
 PREDICTED_SENTIMENTS = ['Sadness']
 
-# MODELS = ["SNN", "uniLSTM", "BiLSTM", "Linear", "Baseline"]
 MODELS = ["SNN", "Linear", "Baseline"]
 
 N_SPLITS = 3
@@ -21,7 +20,7 @@ FILTER_ONES = True
 BALANCE_DATA = False
 BALANCE_METHOD = None   # over for over-sampling, under for under-sampling, won't balance if None
 
-EPOCH = 1
+EPOCH = 6
 BATCH_SIZE = 1
 
 # NOT SUPPORTED YET
@@ -39,3 +38,16 @@ ALL_SENTIMENTS = ['Admiration', 'Adoration', 'Aesthetic appreciation', 'Amusemen
                   'Consequences', 'Danger', 'Self Involvement', 'Self Consistency', 'Relationship', 'Influence',
                   'Agent vs.Situation', 'Attention', 'Safety', 'Approach', 'Arousal', 'Commitment', 'Dominance',
                   'Effort', 'Fairness', 'Identity', 'Upswing']
+
+
+
+
+
+
+
+
+
+
+
+# MODELS = ["SNN", "uniLSTM", "BiLSTM", "Linear", "Baseline"]
+

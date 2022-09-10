@@ -8,7 +8,7 @@ def plot_predictions(predictions_path, results_dir):
     sns.color_palette("bright")
 
     results = pd.read_csv(predictions_path)
-    results.drop(['Unnamed: 0'], axis=1, inplace=True)
+    results.drop(['Unnamed: 0'], axis = 1, inplace=True)
     iter_num = len([val for val in results.columns.values if 'Real' in val])
     iter_cols = int(len(results.columns.values) / iter_num)
     df = results.iloc[:, 0: iter_cols]
@@ -50,7 +50,7 @@ def plot_predictions(predictions_path, results_dir):
     for axis in fig.get_axes():
         axis.label_outer()
 
-    plt.show()
+    # plt.show()
     fig.savefig(f"{results_dir}/predictions.png")
 
     #scatter_plot
@@ -109,9 +109,3 @@ def plot_model_comparison(comparison_path, results_dir):
     plt.rcParams.update({'font.size': 6})
     plt.tight_layout()
     fig.savefig(f"{results_dir}/models.png")
-
-
-if __name__ == '__main__':
-    plot_predictions('C:\\Users\\mayas\\PycharmProjects\\Sagol-project-emotion-classification\\test-plot.csv',
-                     "C:\\Users\\mayas\\PycharmProjects\\Sagol-project-emotion-classification\\plots")
-    plot_model_comparison('C:\\Users\\mayas\\PycharmProjects\\Sagol-project-emotion-classification\\comparison-test.csv', "C:\\Users\\mayas\\PycharmProjects\\Sagol-project-emotion-classification\\plots")
