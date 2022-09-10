@@ -2,6 +2,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import LSTM
 from help_methods import *
+from keras import callbacks
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Bidirectional
 from tensorflow import keras
@@ -54,17 +55,18 @@ class MLmodel:
         return new_model
 
     def fit_NN(self, train_df, sent, show_progress=True):
+        earlystopping = callbacks.EarlyStopping(monitor="loss", mode="min", patience=10, restore_best_weights=True)
         X = train_df.drop([sent], axis=1)
         y = train_df[sent]
         X = X.values.reshape(X.shape[0], 1, X.shape[1])
         model = self.init_model(X)
         if(self.model_type == "BiLSTM" or self.model_type == "uniLSTM"):
-            for i in range (self.n_epochs):
+            for i in range(self.n_epochs):
                 print (f"epoch {i+1} of {self.n_epochs}")
-                model.fit(X,  np.asarray(y), epochs=1, batch_size=1, verbose=show_progress, shuffle=False)
+                model.fit(X, np.asarray(y), epochs=1, batch_size=1, verbose=show_progress, shuffle=False)
                 model.reset_states()
         else:
-            model.fit(X, np.asarray(y),epochs=self.n_epochs, batch_size=1, verbose=show_progress, shuffle=False)
+            model.fit(X, np.asarray(y), epochs=self.n_epochs, batch_size=1, verbose=show_progress, shuffle=False, callbacks=[earlystopping])
         self.model = model
         self.param_num = model.count_params()
 
@@ -74,7 +76,7 @@ class MLmodel:
             X = test_df.drop([sent], axis=1).iloc[i]
             yhat = forecast_lstm(self.model, batch_size, X)
             if yhat is None:
-                print ("none")
+                print("none")
             predictions.append(yhat.item())
         self.predictions = predictions
 
@@ -91,10 +93,9 @@ class MLmodel:
     def predict_baseline(self, test_df, sent):
         self.predictions = [self.model for i in range(len(test_df))]
 
-    # unused?
-    def fit_bayesRidge(self, train_df,sent):
+    def fit_bayesRidge(self, train_df, sent):
         df = train_df.copy(deep=True)
-        model = linear_model.BayesianRidge(normalize = True)
+        model = linear_model.BayesianRidge(normalize=True)
         y = df[sent]
         X = df.drop([s for s in PREDICTED_SENTIMENTS if s in df.columns], axis=1)
         self.model = model.fit(X, y)
@@ -106,8 +107,7 @@ class MLmodel:
         X = df.drop([s for s in PREDICTED_SENTIMENTS if s in df.columns], axis=1)
         self.model = model.fit(X, y)
 
-    # unused?
-    def predict_bayesRidge(self, test_df):
+    def predict_bayesRidge(self, test_df, sent):
         df = test_df.copy(deep=True)
         X = df.drop([s for s in PREDICTED_SENTIMENTS if s in df.columns], axis=1)
         BRPrediction = self.model.predict(X)
