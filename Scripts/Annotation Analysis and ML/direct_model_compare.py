@@ -3,14 +3,13 @@ import logging
 import numpy as np
 import pandas as pd
 
+from plots import *
 from help_methods import *
 from model_class import MLmodel
 from pre_test_model_evaluation import *
 
 
 class DirectModelCompare:
-
-    run_time_models = []
 
     def __init__(self):
         self.logger, self.result_dir = init_analysis()
@@ -19,14 +18,13 @@ class DirectModelCompare:
 
         try:
 
-            all_files_model_eval = pd.DataFrame(columns=MLmodel.get_models_names())
+            model_eval = pd.DataFrame(columns=MLmodel.get_models_names())
 
             # get all csv files from the given folder in constants file
             for file in get_files_from_folder():
 
                 print_and_log(self.logger, f"Processing {file}")
 
-                current_file_model_eval = pd.DataFrame(columns=MLmodel.get_models_names())
                 run_details = self.extract_details_from_file_name(file)
 
                 current_file_result_dir = f'{self.result_dir}/{run_details}'
@@ -37,7 +35,6 @@ class DirectModelCompare:
                     current_sent_result_dir = f'{current_file_result_dir}/{s}'
                     os.makedirs(current_sent_result_dir)
 
-                    current_sent_model_eval = pd.DataFrame(columns=MLmodel.get_models_names())
                     current_sent_predictions = pd.DataFrame()
 
                     print_and_log(self.logger, f"*************** {s} ***************")
@@ -83,7 +80,7 @@ class DirectModelCompare:
                         train_split_df = current_sent_df.copy(deep=True).iloc[train_indexes]
                         test_split_df = current_sent_df.copy(deep=True).iloc[test_indexes]
                         train_split_df, test_split_df = post_split_process(train_split_df, test_split_df, s)
-                        current_sent_predictions[f'real_{str(current_iteration)}_iteration'] = test_split_df[s]
+                        current_sent_predictions[f'Real_{str(current_iteration)}_iteration'] = test_split_df[s]
 
                         if 'Linear' in MODELS:
                             Linear.fit_elastic(train_split_df, s)
@@ -114,25 +111,20 @@ class DirectModelCompare:
                             current_sent_predictions[f'{model.name}_iteration_{str(current_iteration)}'] = pd.Series(model.predictions)
                     
                     for model in MLmodel.models:
-                    # after we finished the cross validation iterations we will divide the accumlated error
+                    # after we finish the cross validation iterations we will divide the accumlated error
                     # by the number of iterations
                         row[f'{model.name}_rmse'] = accumulated_data[f'{model.name}_rmse'] / num_iter
                         row[f'{model.name}_r_square'] = accumulated_data[f'{model.name}_r_square'] / num_iter
 
-                    current_sent_model_eval = current_sent_model_eval.append(row, ignore_index=True)
-                    current_file_model_eval = current_file_model_eval.append(row, ignore_index=True)
-                    all_files_model_eval = all_files_model_eval.append(row, ignore_index=True)
+                    model_eval = model_eval.append(row, ignore_index=True)
 
                     predictions_file_name = f"{current_sent_result_dir}/{run_details}_{s}_model_predictions.csv"
                     current_sent_predictions.to_csv(predictions_file_name, mode='w', header=True)
-                    current_sent_model_eval.to_csv(f"{current_sent_result_dir}/{run_details}_{s}_models_comparison.csv", mode='w', header=True)
-                    predictions_all_iters = concat_cv_results(current_sent_predictions)
-                    predictions_all_iters.to_csv(f'{current_sent_result_dir}/{run_details}_{s}_predictions_concat.csv')
-                    # calculate r square and rmse on predictions_all_iters and append to current_sent_model_eval, current_file_model_eval, all_files_model_eval
+                    plot_predictions(predictions_file_name, current_sent_result_dir)
 
-                current_file_model_eval.to_csv(f'{current_file_result_dir}/{run_details}_all_sentiments_models_comparison.csv', mode='w', header=True)
-
-            all_files_model_eval.to_csv(f"{self.result_dir}/all_files_models_comparison.csv", mode='w', header=True)
+            model_eval_file_name = f"{self.result_dir}/all_files_models_comparison.csv"
+            model_eval.to_csv(model_eval_file_name, mode='w', header=True)
+            plot_model_comparison(model_eval_file_name, self.result_dir)
 
         except Exception as e:
             print_and_log(self.logger, f'An error occurred: {e}')

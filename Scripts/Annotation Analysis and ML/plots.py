@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 
+
 def plot_predictions(predictions_path, results_dir):
     sns.set()
     sns.set_theme(style="whitegrid", font="Times New Roman")
@@ -50,17 +51,8 @@ def plot_predictions(predictions_path, results_dir):
     for axis in fig.get_axes():
         axis.label_outer()
 
-    plt.show()
+    # plt.show()
     fig.savefig(f"{results_dir}/predictions.png")
-
-    #scatter_plot
-    #x_uLSTM = df['uLSTM']
-    #plt.scatter(x_uLSTM, y_val)
-    #plt.xlabel('Y_hat')
-    #plt.ylabel('Y_Real')
-    #plt.legend()
-    #plt.plot(x_uLSTM, x_uLSTM, color='black', label= 'x=y')
-    #plt.show()
 
 
 def plot_model_comparison(comparison_path, results_dir):
@@ -109,9 +101,3 @@ def plot_model_comparison(comparison_path, results_dir):
     plt.rcParams.update({'font.size': 6})
     plt.tight_layout()
     fig.savefig(f"{results_dir}/models.png")
-
-
-if __name__ == '__main__':
-    plot_predictions('C:\\Users\\mayas\\PycharmProjects\\Sagol-project-emotion-classification\\test-plot.csv',
-                     "C:\\Users\\mayas\\PycharmProjects\\Sagol-project-emotion-classification\\plots")
-    plot_model_comparison('C:\\Users\\mayas\\PycharmProjects\\Sagol-project-emotion-classification\\comparison-test.csv', "C:\\Users\\mayas\\PycharmProjects\\Sagol-project-emotion-classification\\plots")

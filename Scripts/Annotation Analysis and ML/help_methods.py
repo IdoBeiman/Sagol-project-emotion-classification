@@ -146,30 +146,6 @@ def get_files_from_folder():
     return csv_files
 
 
-def plot_model_comparison(predictions_dir):
-    results = pd.read_csv(f"{predictions_dir}/direct_model_comparison.csv")
-    results.drop(['Unnamed: 0'],axis=1,inplace=True)
-
-    sns.set_theme(style="whitegrid", font="Times New Roman")
-    ax = sns.boxplot(data=results.drop('Story',axis=1),palette="Set1")
-
-    ax.axes.set_title("Model Comparison",fontsize=25)
-    sns.despine(left=True, bottom=True)
-    sns.set(rc={'figure.figsize':(8,6),"font.size":50})
-    ax.set_xlabel("Models",size=18)
-    ax.set_ylabel("Mean RMSE Per Story",size=18)
-    ax.set(xlabel="Models", ylabel="Mean RMSE Per Podcast")
-    sns.set(font_scale=2)
-
-    fig = ax.get_figure()
-    fig.savefig(f"{predictions_dir}/direct_model_comparison.png")
-
-    print(results.mean(axis = 0))
-    print(results.std(axis = 0))
-    
-    return
-
-
 def trim_file_extension(filename):
     return filename.split(".")[0]
     
@@ -186,41 +162,6 @@ def post_split_process(train_df, test_df, sentiment, filter_ones = True): # filt
     test_df.drop([col for col in test_df.columns if col in to_remove], axis=1, inplace=True)
     train_df = balance_data(train_df, sentiment)
     return train_df, test_df
-
-
-def plot_predictions(prediction_file_name, result_dir):
-    sns.set()
-    sns.set_theme(style="whitegrid", font="Times New Roman")
-    sns.color_palette("bright")
-    
-    results = pd.read_csv(prediction_file_name)
-    y = results['Real']
-    results.drop(['Unnamed: 0','Real'],axis=1,inplace=True)
-    models = [m for m in results.columns if m!="BL"]
-    
-    fig, a = plt.subplots(2,2,figsize=(15, 5),gridspec_kw={'hspace': 0.1, 'wspace': 0.1})
-    sns.despine(left=True, bottom=True)
-    fig.suptitle(f'{prediction_file_name}')
-    i = 0
-    for ax in a.ravel():
-        l1=ax.plot(y,label = "real labels")[0]
-        l3=ax.plot(results['BL'],label='BL')[0]
-        l2=ax.plot(results[models[i]],label=models[i])
-        
-        #ax.legend(fontsize=8)
-        ax.set_ylim([0.5, 5.5]) 
-        ax.set_title(f'{models[i]}')
-        i+=1
-    
-    # Create the legend
-    fig.legend([l1, l3,l2],     # The line objects
-                labels=['Real','BL','Model for comparison'],   # The labels for each line
-                loc="lower center", ncol=3)
-    
-    for axi in fig.get_axes():
-        axi.label_outer()
-        
-    fig.savefig(f"{result_dir}/predictions.png")
 
 
 def smooth_labels(labels, factor=0.1):

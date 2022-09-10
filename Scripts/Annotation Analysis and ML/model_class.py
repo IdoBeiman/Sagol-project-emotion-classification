@@ -1,6 +1,7 @@
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import LSTM
+from keras import callbacks
 from help_methods import *
 from tensorflow.keras.constraints import MaxNorm
 from tensorflow.keras.layers import Dense
@@ -61,7 +62,9 @@ class MLmodel:
         X = train_df.drop([sent], axis=1)
         X = X.values.reshape(X.shape[0], 1, X.shape[1])
         model = self.init_model(X)
-        model.fit(X, np.asarray(y),epochs=self.n_epochs, batch_size=1, verbose=show_progress, shuffle=False)
+        earlystopping = callbacks.EarlyStopping(monitor="loss", mode="min", patience=10, restore_best_weights=True)
+        model.fit(X, np.asarray(y),epochs=self.n_epochs, batch_size=1, verbose=show_progress, shuffle=False,
+                  callbacks=[earlystopping])
         self.model = model
         self.param_num = model.count_params()
 
