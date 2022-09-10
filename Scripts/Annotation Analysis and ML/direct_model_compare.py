@@ -128,7 +128,7 @@ class DirectModelCompare:
                             concatenated_preds[f'{model.name}_all_rmse'] = calculate_rmse_error(concatenated_preds["Target"], concatenated_preds[f'{model.name}'])
                             row[f'{model.name}_all_pearson_correl'] = calculate_pearson_correl(concatenated_preds["Target"], concatenated_preds[f'{model.name}'])
                             row[f'{model.name}_all_r_2_correl'] = calculate_r2_correl( concatenated_preds["Target"], concatenated_preds[f'{model.name}'])
-                            row[f'{model.name}_num_samples'] = len(current_sent_df)
+                            # row[f'{model.name}_num_samples'] = len(current_sent_df)
 
                         file_eval = model_eval.append(row, ignore_index=True)
                         model_eval = model_eval.append(row, ignore_index=True)
