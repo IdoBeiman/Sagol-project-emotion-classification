@@ -2,7 +2,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import LSTM
 from help_methods import *
-from tensorflow.keras.constraints import MaxNorm
+from keras import callbacks
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Bidirectional
 from tensorflow import keras
@@ -49,19 +49,24 @@ class MLmodel:
             new_model.add(Bidirectional(LSTM(self.n1, stateful=True, return_sequences=True, activation=self.ac_func),batch_input_shape=(1, X.shape[1], X.shape[2])))
             new_model.add(Dropout(self.d_o))
             new_model.add(Bidirectional(LSTM(self.n2, stateful=True, return_sequences=True, activation=self.ac_func)))
-            new_model.add(Dropout(self.d_o))
-            new_model.add(Bidirectional(LSTM(self.n3, stateful=True, return_sequences=True, activation=self.ac_func)))
         new_model.add(Dense(1))
         # opt = keras.optimizers.Adam(learning_rate=0.001)
         new_model.compile(loss=rmse, optimizer="adam", metrics=[metrics.RootMeanSquaredError()])
         return new_model
 
     def fit_NN(self, train_df, sent, show_progress=True):
-        y = train_df[sent]
+        earlystopping = callbacks.EarlyStopping(monitor="loss", mode="min", patience=10, restore_best_weights=True)
         X = train_df.drop([sent], axis=1)
+        y = train_df[sent]
         X = X.values.reshape(X.shape[0], 1, X.shape[1])
         model = self.init_model(X)
-        model.fit(X, np.asarray(y),epochs=self.n_epochs, batch_size=1, verbose=show_progress, shuffle=False)
+        if(self.model_type == "BiLSTM" or self.model_type == "uniLSTM"):
+            for i in range(self.n_epochs):
+                print (f"epoch {i+1} of {self.n_epochs}")
+                model.fit(X, np.asarray(y), epochs=1, batch_size=1, verbose=show_progress, shuffle=False)
+                model.reset_states()
+        else:
+            model.fit(X, np.asarray(y), epochs=self.n_epochs, batch_size=1, verbose=show_progress, shuffle=False, callbacks=[earlystopping])
         self.model = model
         self.param_num = model.count_params()
 
@@ -71,7 +76,7 @@ class MLmodel:
             X = test_df.drop([sent], axis=1).iloc[i]
             yhat = forecast_lstm(self.model, batch_size, X)
             if yhat is None:
-                print ("none")
+                print("none")
             predictions.append(yhat.item())
         self.predictions = predictions
 
@@ -88,29 +93,33 @@ class MLmodel:
     def predict_baseline(self, test_df, sent):
         self.predictions = [self.model for i in range(len(test_df))]
 
-    # unused?
-    def fit_bayesRidge(self, train_df):
-        model = linear_model.BayesianRidge(normalize = True)
-        y = train_df[PREDICTED_SENTIMENTS]
-        X = train_df.drop([PREDICTED_SENTIMENTS], axis=1)
+    def fit_bayesRidge(self, train_df, sent):
+        df = train_df.copy(deep=True)
+        model = linear_model.BayesianRidge(normalize=True)
+        y = df[sent]
+        X = df.drop([s for s in PREDICTED_SENTIMENTS if s in df.columns], axis=1)
         self.model = model.fit(X, y)
         
     def fit_elastic(self, train_df, sent):
         df = train_df.copy(deep=True)
-        model = linear_model.ElasticNet(normalize=True)
+        model = linear_model.ElasticNet(alpha=1.0, l1_ratio=0.5)
         y = df[sent]
         X = df.drop([s for s in PREDICTED_SENTIMENTS if s in df.columns], axis=1)
         self.model = model.fit(X, y)
 
-    # unused?
-    def predict_bayesRidge(self, test_df):
-        BRPrediction = self.model.predict(test_df.drop([PREDICTED_SENTIMENTS], axis=1))
+    def predict_bayesRidge(self, test_df, sent):
+        df = test_df.copy(deep=True)
+        X = df.drop([s for s in PREDICTED_SENTIMENTS if s in df.columns], axis=1)
+        BRPrediction = self.model.predict(X)
         self.predictions = BRPrediction
 
     def predict_elastic(self, test_df, sent):
         df = test_df.copy(deep=True)
-        elasticPrediction = self.model.predict(df.drop([sent], axis=1))
-        self.predictions = elasticPrediction
+        elasticPredictions=[]
+        for index,row in df.iterrows(): 
+            row = row[:len(row)-1]
+            elasticPredictions.append(self.model.predict([row]))
+        self.predictions = elasticPredictions
 
     def get_params(self, deep=True):
         return self.__dict__

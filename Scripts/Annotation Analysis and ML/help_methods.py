@@ -3,13 +3,13 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 from constants import *
-
+from math import sqrt
 from os import listdir
 from datetime import datetime
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import mean_squared_error, r2_score
 from imblearn.over_sampling import RandomOverSampler
 from imblearn.under_sampling import RandomUnderSampler
-from sklearn.model_selection import LeaveOneGroupOut, KFold, GroupKFold, StratifiedKFold
+from sklearn.model_selection import KFold, GroupKFold, StratifiedKFold
 
 
 def process_tokens_df(file_path, sents):
@@ -97,6 +97,9 @@ def split_data_using_cross_validation(df, sentitment, n_splits=N_SPLITS, split_t
         # log
         Kfold = KFold(n_splits)
         return Kfold.split(df_copy, df_copy[sentitment])
+    # elif split_type == 'RegularSplit': 
+    #     train_ind = int(len(df)*0.7)
+    #     yield ([i for i in range (train_ind)], [k for k in range (train_ind,len(df))])
     else:
         # log!
         print('choose valid split method')
@@ -110,6 +113,14 @@ def get_num_splits(df):
         iterations = logo.get_n_splits(groups=groups)
         return iterations
     return N_SPLITS
+
+# def create_lookback_dataset(dataset, look_back=3):
+#     dataX, dataY = [], []
+#     for i in range(len(dataset)-look_back-1):
+#         a = dataset.values[i:(i+look_back),0:768]
+#         dataX.append(a)
+#         dataY.append(dataset.values[i + look_back,768:769])
+#     return np.array(dataX), np.array(dataY)
 
 
 def init_analysis():
@@ -146,30 +157,6 @@ def get_files_from_folder():
     return csv_files
 
 
-def plot_model_comparison(predictions_dir):
-    results = pd.read_csv(f"{predictions_dir}/direct_model_comparison.csv")
-    results.drop(['Unnamed: 0'],axis=1,inplace=True)
-
-    sns.set_theme(style="whitegrid", font="Times New Roman")
-    ax = sns.boxplot(data=results.drop('Story',axis=1),palette="Set1")
-
-    ax.axes.set_title("Model Comparison",fontsize=25)
-    sns.despine(left=True, bottom=True)
-    sns.set(rc={'figure.figsize':(8,6),"font.size":50})
-    ax.set_xlabel("Models",size=18)
-    ax.set_ylabel("Mean RMSE Per Story",size=18)
-    ax.set(xlabel="Models", ylabel="Mean RMSE Per Podcast")
-    sns.set(font_scale=2)
-
-    fig = ax.get_figure()
-    fig.savefig(f"{predictions_dir}/direct_model_comparison.png")
-
-    print(results.mean(axis = 0))
-    print(results.std(axis = 0))
-    
-    return
-
-
 def trim_file_extension(filename):
     return filename.split(".")[0]
     
@@ -180,47 +167,10 @@ def post_split_process(train_df, test_df, sentiment, filter_ones = True): # filt
     train_df.drop(["episodeName"], axis=1, inplace=True)
     train_df.reset_index(drop=True, inplace=True)
     to_remove = [sent for sent in ALL_SENTIMENTS if sent != sentiment]
-    # if sentiment in to_remove:
-    #     to_remove.remove(sentiment)
     train_df.drop([col for col in train_df.columns if col in to_remove], axis=1, inplace=True)
     test_df.drop([col for col in test_df.columns if col in to_remove], axis=1, inplace=True)
     train_df = balance_data(train_df, sentiment)
     return train_df, test_df
-
-
-def plot_predictions(prediction_file_name, result_dir):
-    sns.set()
-    sns.set_theme(style="whitegrid", font="Times New Roman")
-    sns.color_palette("bright")
-    
-    results = pd.read_csv(prediction_file_name)
-    y = results['Real']
-    results.drop(['Unnamed: 0','Real'],axis=1,inplace=True)
-    models = [m for m in results.columns if m!="BL"]
-    
-    fig, a = plt.subplots(2,2,figsize=(15, 5),gridspec_kw={'hspace': 0.1, 'wspace': 0.1})
-    sns.despine(left=True, bottom=True)
-    fig.suptitle(f'{prediction_file_name}')
-    i = 0
-    for ax in a.ravel():
-        l1=ax.plot(y,label = "real labels")[0]
-        l3=ax.plot(results['BL'],label='BL')[0]
-        l2=ax.plot(results[models[i]],label=models[i])
-        
-        #ax.legend(fontsize=8)
-        ax.set_ylim([0.5, 5.5]) 
-        ax.set_title(f'{models[i]}')
-        i+=1
-    
-    # Create the legend
-    fig.legend([l1, l3,l2],     # The line objects
-                labels=['Real','BL','Model for comparison'],   # The labels for each line
-                loc="lower center", ncol=3)
-    
-    for axi in fig.get_axes():
-        axi.label_outer()
-        
-    fig.savefig(f"{result_dir}/predictions.png")
 
 
 def smooth_labels(labels, factor=0.1):
@@ -229,6 +179,7 @@ def smooth_labels(labels, factor=0.1):
     labels += (factor / labels.shape[1])
     # returned the smoothed labels
     return labels
+
 
 # NEED IDO
 def labels_to_bins(df): # one sentiment only
@@ -247,12 +198,25 @@ def get_grid_params(model_type):
         return {'model__optimizer':['adam'],'model__activation' : ["sigmoid","tanh","relu"],'model__dropout_rate':[0.2,0.3,0.4,0.5,0.6,0.7]}
 
 
+def calculate_rmse_error(true_val, preds):
+    return sqrt(mean_squared_error(true_val, preds))
+
+
+def calculate_pearson_correl(true_val, preds):
+    return preds.corr(true_val)
+
+
+def calculate_r2_correl(true_val, preds):
+    return r2_score(true_val,preds)
+
+
 # NEED IDO
 def get_grid__optimizer_params(model_type):
     if model_type == "uniLSTM":
         return None
     elif model_type == "uniLSTM" or model_type == "dense" or model_type == "BiLSTM":
         return {'model__optimizer':['adam'],'optimizer__learning_rate':[0.001, 0.01, 0.1, 0.2, 0.3]}
+
 
 # NEED IDO
 def grid_search_df_process(df, sentiment):
