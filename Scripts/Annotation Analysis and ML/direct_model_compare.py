@@ -116,12 +116,12 @@ class DirectModelCompare:
                     for model in MLmodel.models:
                     # after we finished the cross validation iterations we will divide the accumlated error
                     # by the number of iterations
-                        row[f'{model.name}_rmse'] = accumulated_data[f'{model.name}_rmse'] / num_iter
-                        row[f'{model.name}_r_square'] = accumulated_data[f'{model.name}_r_square'] / num_iter
+                        row[f'{model.name}_avg__rmse'] = accumulated_data[f'{model.name}_rmse'] / num_iter
+                        row[f'{model.name}_avg_r_square'] = accumulated_data[f'{model.name}_r_square'] / num_iter
                         concatenated_preds['Target'] =pd.Series(collect_target_values)
-                        concatenated_preds[f'{model.name}_rmse'] =calculate_rmse_error( concatenated_preds["Target"] , concatenated_preds[f'{model.name}'])
-                        row[f'{model.name}pearson_correl'] =calculate_pearson_correl( concatenated_preds["Target"] , concatenated_preds[f'{model.name}'])
-                        row[f'{model.name}r_2_correl'] =calculate_r2_correl( concatenated_preds["Target"] , concatenated_preds[f'{model.name}'])
+                        concatenated_preds[f'{model.name}_all_rmse'] =calculate_rmse_error( concatenated_preds["Target"] , concatenated_preds[f'{model.name}'])
+                        row[f'{model.name}_all_pearson_correl'] =calculate_pearson_correl( concatenated_preds["Target"] , concatenated_preds[f'{model.name}'])
+                        row[f'{model.name}_all_r_2_correl'] =calculate_r2_correl( concatenated_preds["Target"] , concatenated_preds[f'{model.name}'])
                     current_sent_model_eval = current_sent_model_eval.append(row, ignore_index=True)
                     current_file_model_eval = current_file_model_eval.append(row, ignore_index=True)
                     all_files_model_eval = all_files_model_eval.append(row, ignore_index=True)
