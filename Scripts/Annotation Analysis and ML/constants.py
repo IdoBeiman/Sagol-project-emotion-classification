@@ -10,7 +10,7 @@ ROOT = os.path.join(os.getcwd(), "\debug")
 PREDICTED_SENTIMENTS = ['Sadness']
 
 # MODELS = ["SNN", "uniLSTM", "BiLSTM", "Linear", "Baseline"]
-MODELS = ["Linear","Baseline"]
+MODELS = ["SNN", "Linear", "Baseline"]
 
 N_SPLITS = 3
 CV_SPLIT_METHOD = 'StratifiedKFold'
