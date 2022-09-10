@@ -234,7 +234,7 @@ def smooth_labels(labels, factor=0.1):
 def labels_to_bins(df): # one sentiment only
     bins = [0,3,6,8]
     labels = bins[1:]
-    df[PREDICTED_SENTIMENT] = pd.cut(df[PREDICTED_SENTIMENT], bins=bins, labels=[1, 2, 3])
+    df[PREDICTED_SENTIMENTS] = pd.cut(df[PREDICTED_SENTIMENTS], bins=bins, labels=[1, 2, 3])
 
 # NEED IDO
 def get_grid_params(model_type):

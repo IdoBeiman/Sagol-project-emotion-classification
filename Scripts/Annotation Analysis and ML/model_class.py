@@ -91,8 +91,8 @@ class MLmodel:
     # unused?
     def fit_bayesRidge(self, train_df):
         model = linear_model.BayesianRidge(normalize = True)
-        y = train_df[PREDICTED_SENTIMENT]
-        X = train_df.drop([PREDICTED_SENTIMENT], axis=1)
+        y = train_df[PREDICTED_SENTIMENTS]
+        X = train_df.drop([PREDICTED_SENTIMENTS], axis=1)
         self.model = model.fit(X, y)
         
     def fit_elastic(self, train_df, sent):
@@ -104,7 +104,7 @@ class MLmodel:
 
     # unused?
     def predict_bayesRidge(self, test_df):
-        BRPrediction = self.model.predict(test_df.drop([PREDICTED_SENTIMENT], axis=1))
+        BRPrediction = self.model.predict(test_df.drop([PREDICTED_SENTIMENTS], axis=1))
         self.predictions = BRPrediction
 
     def predict_elastic(self, test_df, sent):
