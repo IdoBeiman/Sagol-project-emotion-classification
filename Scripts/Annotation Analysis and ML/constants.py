@@ -7,9 +7,10 @@ ML_INPUT_DIR = "./Tokenized_data"
 ROOT = os.path.join(os.getcwd(), "\debug")
 
 # **** CONFIGURATION ****
-PREDICTED_SENTIMENTS = ['Sadness', 'Calmness']
+PREDICTED_SENTIMENTS = ['Sadness']
 
-MODELS = ["SNN", "uniLSTM", "BiLSTM", "Linear", "Baseline"]
+# MODELS = ["SNN", "uniLSTM", "BiLSTM", "Linear", "Baseline"]
+MODELS = ["Linear","Baseline"]
 
 N_SPLITS = 3
 CV_SPLIT_METHOD = 'StratifiedKFold'

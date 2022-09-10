@@ -3,13 +3,13 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 from constants import *
-
+from math import sqrt
 from os import listdir
 from datetime import datetime
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import mean_squared_error, r2_score
 from imblearn.over_sampling import RandomOverSampler
 from imblearn.under_sampling import RandomUnderSampler
-from sklearn.model_selection import LeaveOneGroupOut, KFold, GroupKFold, StratifiedKFold
+from sklearn.model_selection import KFold, GroupKFold, StratifiedKFold
 
 
 def process_tokens_df(file_path, sents):
@@ -97,6 +97,9 @@ def split_data_using_cross_validation(df, sentitment, n_splits=N_SPLITS, split_t
         # log
         Kfold = KFold(n_splits)
         return Kfold.split(df_copy, df_copy[sentitment])
+    # elif split_type == 'RegularSplit': 
+    #     train_ind = int(len(df)*0.7)
+    #     yield ([i for i in range (train_ind)], [k for k in range (train_ind,len(df))])
     else:
         # log!
         print('choose valid split method')
@@ -111,7 +114,13 @@ def get_num_splits(df):
         return iterations
     return N_SPLITS
 
-
+# def create_lookback_dataset(dataset, look_back=3):
+#     dataX, dataY = [], []
+#     for i in range(len(dataset)-look_back-1):
+#         a = dataset.values[i:(i+look_back),0:768]
+#         dataX.append(a)
+#         dataY.append(dataset.values[i + look_back,768:769])
+#     return np.array(dataX), np.array(dataY)
 def init_analysis():
     now = datetime.now()
     now_formatted = now.strftime("%d-%m-%Y_%H-%M-%S")
@@ -234,7 +243,7 @@ def smooth_labels(labels, factor=0.1):
 def labels_to_bins(df): # one sentiment only
     bins = [0,3,6,8]
     labels = bins[1:]
-    df[PREDICTED_SENTIMENT] = pd.cut(df[PREDICTED_SENTIMENT], bins=bins, labels=[1, 2, 3])
+    df[PREDICTED_SENTIMENTS] = pd.cut(df[PREDICTED_SENTIMENTS], bins=bins, labels=[1, 2, 3])
 
 # NEED IDO
 def get_grid_params(model_type):
@@ -246,7 +255,12 @@ def get_grid_params(model_type):
     elif model_type == "uniLSTM":
         return {'model__optimizer':['adam'],'model__activation' : ["sigmoid","tanh","relu"],'model__dropout_rate':[0.2,0.3,0.4,0.5,0.6,0.7]}
 
-
+def calculate_rmse_error(true_val, preds):
+    return sqrt(mean_squared_error(true_val, preds))
+def calculate_pearson_correl(true_val, preds):
+    return preds.corr(true_val)
+def calculate_r2_correl(true_val, preds):
+    return r2_score(true_val,preds)
 # NEED IDO
 def get_grid__optimizer_params(model_type):
     if model_type == "uniLSTM":
