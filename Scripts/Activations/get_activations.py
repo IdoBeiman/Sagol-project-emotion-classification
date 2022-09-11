@@ -193,7 +193,7 @@ def get_activations_from_csv(dirPath, operation, layer, model_name):
     return df_embeddings
 
 
-# this script takes csv file with segments and labels, and create ML Input file
+# this script takes the csv file with segments and labels, and creates the ML Input file
 # the user can modify the configuration below
 
 PRE_TRAIN = False
