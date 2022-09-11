@@ -2,8 +2,8 @@ from textGrid_to_segments import *
 from label_union import *
 from process_labels import *
 
-# this script takes textGrid file with transcribed text and time-stamps, a json file with segments division
-# and a csv file with labels from the source folders configured and create one csv file per episode
+# this script takes a textGrid file with transcribed text and time-stamps, a json file with division to segments 
+# and a csv file with labels from the source folders that are configured and creates one csv file per episode
 # the user has to insert the subject number.
 
 # enter subject num here
