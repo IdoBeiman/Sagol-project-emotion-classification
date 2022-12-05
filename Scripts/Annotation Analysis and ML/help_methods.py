@@ -24,11 +24,9 @@ def process_tokens_df(file_path, sents):
     if SMOOTH_LABELS:
         smooth_labels(labels, factor=0.1)
     df[label_cols] = labels
-    filtered_df = df[df[sents].notnull().all(1)] # right now it checks that all the sentiments exist - will be changed to check that any of them exists
+    filtered_df = df[df[sents].notnull().all(1)]
     if FILTER_ONES:
         filtered_df = filtered_df[filtered_df[sents[0]] != 1]
-        # filtered_df = filtered_df[filtered_df[sents] != 1]
-        # labels_to_bins(test_df)
     return filtered_df
 
 
@@ -36,7 +34,6 @@ def balance_data(df, sents):
     if BALANCE_DATA:
         X = df.drop(sents, axis=1)
         y = pd.DataFrame(df[sents])
-        # log - f'initial value count: {y.value_counts()}. performing {BALANCE_METHOD} sampling'
         if BALANCE_METHOD == 'over':
             # read more about sampling strategies here -
             # https://imbalanced-learn.org/stable/references/generated/imblearn.over_sampling.RandomOverSampler.html
@@ -97,9 +94,6 @@ def split_data_using_cross_validation(df, sentitment, n_splits=N_SPLITS, split_t
         # log
         Kfold = KFold(n_splits)
         return Kfold.split(df_copy, df_copy[sentitment])
-    # elif split_type == 'RegularSplit': 
-    #     train_ind = int(len(df)*0.7)
-    #     yield ([i for i in range (train_ind)], [k for k in range (train_ind,len(df))])
     else:
         # log!
         print('choose valid split method')
@@ -183,18 +177,15 @@ def smooth_labels(labels, factor=0.1):
     return labels
 
 
-# NEED IDO
 def labels_to_bins(df): # one sentiment only
     bins = [0,3,6,8]
     labels = bins[1:]
     df[PREDICTED_SENTIMENTS] = pd.cut(df[PREDICTED_SENTIMENTS], bins=bins, labels=[1, 2, 3])
 
-# NEED IDO
 def get_grid_params(model_type):
     if model_type == "":
         return None
     elif model_type == "SNN" or model_type == "BiLSTM":
-        # return {'model__layer_2_neurons':[16,32,64,128],'model__layer_1_neurons':[128,256.512], 'model__optimizer':['adam', 'sgd'], 'model__initializer': ['normal', 'uniform'],'model__activation' : ["sigmoid","tanh","relu"],'model__dropout_rate':[0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9],'model__weight_constraint' : [1.0,2.0,3.0,4.0]}
         return {'model__optimizer':['adam'],'model__activation' : ["sigmoid","tanh","relu"],'model__dropout_rate':[0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9],'model__layer_1_neurons':[32,64,128],'model__layer_2_neurons':[8,16,32]}
     elif model_type == "uniLSTM":
         return {'model__optimizer':['adam'],'model__activation' : ["sigmoid","tanh","relu"],'model__dropout_rate':[0.2,0.3,0.4,0.5,0.6,0.7]}
@@ -212,7 +203,6 @@ def calculate_r2_correl(true_val, preds):
     return r2_score(true_val,preds)
 
 
-# NEED IDO
 def get_grid__optimizer_params(model_type):
     if model_type == "uniLSTM":
         return None
@@ -220,7 +210,6 @@ def get_grid__optimizer_params(model_type):
         return {'model__optimizer':['adam'],'optimizer__learning_rate':[0.001, 0.01, 0.1, 0.2, 0.3]}
 
 
-# NEED IDO
 def grid_search_df_process(df, sentiment):
     df.drop(["episodeName"], axis=1, inplace=True)
     df.reset_index(drop=True, inplace=True)

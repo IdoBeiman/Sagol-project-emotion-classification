@@ -1,18 +1,24 @@
 import os
 
 # **** PATHS ****
-# ML_INPUT_DIR = "./Tokenized_data"
+
 ML_INPUT_DIR = 'C:\\Users\\Yuli\\Documents\\Uni\\Sagol-project-emotion-classification\\Tokenized_data'
 
 ROOT = os.path.join(os.getcwd(), "\debug")
+INPUT_FOLDER = "/data/emotion_project/idomayayuli/codeFolder/source_code/scripts"
+PRETRAINED_PATH = '/data/emotion_project/transcriptions/labels_with_text/pre_train_data/pre-trained-model'
 
+# data proccessing paths
+TEXTGRID_INPUT_DIR = '/data/emotion_project/transcriptions/aligned/'  # textGrid files
+TIME_STAMPS_INPUT_DIR = '/data/emotion_project/transcriptions/time_stamps/'   # json files with segments time stamp
+OUTPUT_SEGMENTS_DIR = '/data/emotion_project/transcriptions/episodes_to_segments/'   # saving time stamped segments
 # **** CONFIGURATION ****
 
 MODELS = ["SNN", "Linear", "Baseline"]
 
 N_SPLITS = 3
-CV_SPLIT_METHOD = 'StratifiedKFold'
-# options - 'GroupKfold', 'StratifiedKFold', 'Random'
+CV_SPLIT_METHOD = 'StratifiedKFold' # possible options - 'GroupKfold', 'StratifiedKFold', 'Random'
+
 # if CV_SPLIT_METHOD is StratifiedKFold, SMOOTH_LABELS must be False
 SMOOTH_LABELS = False
 FILTER_ONES = True

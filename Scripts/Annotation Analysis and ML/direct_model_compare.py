@@ -4,7 +4,7 @@ import pandas as pd
 from plots import *
 from help_methods import *
 from model_class import MLmodel
-from pre_test_model_evaluation import *
+from grid_search import *
 
 
 class DirectModelCompare:

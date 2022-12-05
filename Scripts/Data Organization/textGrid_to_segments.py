@@ -2,15 +2,16 @@ import os
 import json
 import numpy as np
 import pandas as pd
+from constants import OUTPUT_SEGMENTS_DIR, TEXTGRID_INPUT_DIR, TIME_STAMPS_INPUT_DIR
 from praatio import textgrid
 import re
 
 
 def text_to_segments(sub_num):
 
-    textGrid_input_dir = '/data/emotion_project/transcriptions/aligned/' + sub_num  # textGrid files
-    timeStamps_input_dir = '/data/emotion_project/transcriptions/time_stamps/' + sub_num  # json files with segments time stamp
-    output_segments_dir = '/data/emotion_project/transcriptions/episodes_to_segments/' + sub_num  # saving time stamped segments
+    textGrid_input_dir = TEXTGRID_INPUT_DIR + sub_num  # textGrid files
+    timeStamps_input_dir = TIME_STAMPS_INPUT_DIR + sub_num  # json files with segments time stamp
+    output_segments_dir = OUTPUT_SEGMENTS_DIR + sub_num  # saving time stamped segments
 
     def open_grid(textgrid_path):
         tg = textgrid.openTextgrid(textgrid_path, includeEmptyIntervals=True)

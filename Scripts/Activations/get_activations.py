@@ -1,9 +1,9 @@
 import glob
-
 import numpy
 import pandas as pd
 import torch
 from praatio import textgrid
+import constants
 from tqdm import tqdm
 import re
 import os
@@ -27,28 +27,25 @@ emotions = ['Admiration', 'Adoration', 'Aesthetic appreciation', 'Amusement', 'A
 
 def setup_model(model_name):
     os.environ["CURL_CA_BUNDLE"] = ""
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     if model_name.lower() == "gpt" or model_name.lower() == "gpt2":
         pretrained = './models_config/pretrained/config.json'
         config = GPT2Config()
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         config = GPT2Config.from_json_file(pretrained)
         model = GPT2Model(config=config).to(device)
     elif model_name.lower() == "bert":
         pretrained = './models_config/pretrained/bert_config.json'
         config = BertConfig()
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         config = BertConfig.from_json_file(pretrained)
         model = BertModel(config=config).to(device)
     elif model_name.lower() == "t5":
         pretrained = './models_config/pretrained/config.json'
         config = T5Config()
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         config = T5Config.from_json_file(pretrained)
         model = T5Model(config=config).to(device)
     elif model_name.lower() == "gpt2-pretrained":
-        pretrained = '/data/emotion_project/transcriptions/labels_with_text/pre_train_data/pre-trained-model/config.json'
+        pretrained = "/config.json".format(constants.PRETRAINED_PATH)
         config = GPT2Config()
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         config = GPT2Config.from_json_file(pretrained)
         model = GPT2Model(config=config).to(device)
 
@@ -75,7 +72,7 @@ def add_textgrid_time_to_activations(df, textgrid_path):
 
 # Output: data frame in size for [num_segments, 768] consists of the <operation> values of the neurons of #LAYER for each of the segments.
 # the mean value is computed by taking the mean of each word activation
-def get_activations_from_csv(dirPath, operation, layer, model_name):
+def get_activations_from_csv(dirPath, operation, layer, model_name, subject_name):
     if model_name.lower() == "bert":
         tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     elif model_name.lower()=="gpt":
@@ -83,13 +80,13 @@ def get_activations_from_csv(dirPath, operation, layer, model_name):
     elif model_name.lower()=="t5":
         tokenizer = T5Tokenizer.from_pretrained('t5-small')
     elif model_name.lower() == "gpt2-pretrained":
-        tokenizer = GPT2Tokenizer.from_pretrained('/data/emotion_project/transcriptions/labels_with_text/pre_train_data/pre-trained-model')
+        tokenizer = GPT2Tokenizer.from_pretrained(constants.PRETRAINED_PATH)
     model, device = setup_model(model_name)
     os.chdir(dirPath)
     allFiles = glob.glob('*.{}'.format("csv"))
     merged_df = pd.DataFrame()
     for path in allFiles:
-        os.chdir("/data/emotion_project/idomayayuli/codeFolder/source_code/scripts/{}".format(dirPath))
+        os.chdir("{}/{}".format(constants.INPUT_FOLDER, dirPath))
         sequence = pd.read_csv(path)
         df_embeddings = pd.DataFrame()
         segments_lengths = []
@@ -97,7 +94,6 @@ def get_activations_from_csv(dirPath, operation, layer, model_name):
         subject = path.split("_")[0]
         sequence.reset_index(drop=True, inplace=True)
         model.eval()
-        # debugging line
         gpt_toks = []
         for index, row in sequence.iterrows():
             segment = re.sub(r' {[^}]*}', '', row['text']) # remove manual markings like {lg} for laughter
@@ -129,7 +125,7 @@ def get_activations_from_csv(dirPath, operation, layer, model_name):
                     input_ids = input_ids[:,num_tokens_to_remove:]
                 input_ids_length = len(input_ids[0][0]) if "gpt" in model_name.lower() else len(input_ids[0])
             with torch.no_grad():
-                # tokenization is done for all the segments until the current one to handle context, but processing will use
+                # tokenization is done for all the segments until the current one, in order to handle context, but processing will use
                 # only the segment's words
                 if model_name.lower() != "t5":
                     try:
@@ -182,12 +178,12 @@ def get_activations_from_csv(dirPath, operation, layer, model_name):
         if operation == "all_words":
             # match word timing from textgrid
             # use df_embeddings, gpt_toks, textgrid path
-            grid_path = f'/data/emotion_project/transcriptions/aligned/sub-005/{os.path.splitext(path)[0]}.TextGrid'
+            grid_path = "{}/{}/{}}.TextGrid".format(constants.TEXTGRID_INPUT_DIR, subject_name, os.path.splitext(path)[0])
             df_embeddings = add_textgrid_time_to_activations(df_embeddings, grid_path)
         merged_df = pd.concat([merged_df, df_embeddings])
-    os.chdir("/data/emotion_project/idomayayuli/codeFolder/source_code/scripts")
+    os.chdir(constants.INPUT_FOLDER)
     merged_df.to_csv(
-        'tokenized_files_new/pretrained/{}_activations_layer_{}_{}_operation_{}_origin_{}_{}_model_{}.csv'.format("data", layer, subject,
+        'tokenized_files/pretrained/{}_activations_layer_{}_{}_operation_{}_origin_{}_{}_model_{}.csv'.format("data", layer, subject,
                                                                                               operation, "full","with_context",model_name))
     print("finished creating activations for {}".format(path))
     return df_embeddings
@@ -199,7 +195,8 @@ def get_activations_from_csv(dirPath, operation, layer, model_name):
 PRE_TRAIN = False
 OPERATION = ['mean']  # mean, last_word, all_words
 MODELS = ['gpt2', 'bert', 't5']
-SRC_DIR = ["all_data/labels_with_text/sub-006", "all_data", "all_data/labels_with_text/sub-007"]
+SRC_DIR = ["all_data/labels_with_text/sub-006"]
+SUBJECT_NAME = "sub-006"
 
 if __name__ == '__main__':
 
@@ -212,7 +209,7 @@ if __name__ == '__main__':
                             setup_model(j)
                             operation = t
                             LAYER = i
-                            activations = get_activations_from_csv(path, operation, LAYER, j)
+                            activations = get_activations_from_csv(path, operation, LAYER, j, SUBJECT_NAME)
                 else:   # different number of layers
                     for i in range(7):
                         for t in OPERATION:
@@ -226,5 +223,5 @@ if __name__ == '__main__':
                     setup_model("gpt2-pretrained")
                     operation = t
                     LAYER = i
-                    activations = get_activations_from_csv(path, operation, LAYER, "gpt2-pretrained")
+                    activations = get_activations_from_csv(path, operation, LAYER, "gpt2-pretrained", SUBJECT_NAME)
     print("done")
