@@ -7,10 +7,9 @@ ML_INPUT_DIR = "./Tokenized_data"
 ROOT = os.path.join(os.getcwd(), "\debug")
 
 # **** CONFIGURATION ****
-PREDICTED_SENTIMENTS = ['Sadness']
 
 # MODELS = ["SNN", "uniLSTM", "BiLSTM", "Linear", "Baseline"]
-MODELS = ["Linear","Baseline"]
+MODELS = ["SNN","Baseline"]
 
 N_SPLITS = 3
 CV_SPLIT_METHOD = 'StratifiedKFold'
@@ -21,15 +20,15 @@ FILTER_ONES = True
 BALANCE_DATA = False
 BALANCE_METHOD = None   # over for over-sampling, under for under-sampling, won't balance if None
 
-EPOCH = 1
+EPOCH = 30
 BATCH_SIZE = 1
 
 # NOT SUPPORTED YET
 MULTI = False
 
-ALL_SENTIMENTS = ['Admiration', 'Adoration', 'Aesthetic appreciation', 'Amusement', 'Anger', 'Anxiety', 'Awe', 'Boredom',
+ALL_SENTIMENTS = ['Admiration', 'Adoration', 'Amusement', 'Anger', 'Anxiety', 'Awe', 'Boredom',
                   'Calmness', 'Confusion', 'Contempt', 'Contentment', 'Craving', 'Despair', 'Disappointment', 'Disgust',
-                  'Embarrassment', 'Empathic pain', 'Entrancement', 'Envy', 'Excitement', 'Fear', 'Gratitude', 'Guilt',
+                  'Embarrassment', 'Entrancement', 'Envy', 'Excitement', 'Fear', 'Gratitude', 'Guilt',
                   'Hope', 'Horror', 'Interest', 'Irritation', 'Jealousy', 'Joy', 'Nostalgia', 'Pleasure', 'Pride',
                   'Relief', 'Romance', 'Sadness', 'Satisfaction', 'Sexual desire', 'Surprise', 'Sympathy', 'Triumph',
                   'Expectedness', 'Pleasantness', 'Unpleasantness', 'Goal Consistency', 'Caused by agent',
@@ -39,3 +38,4 @@ ALL_SENTIMENTS = ['Admiration', 'Adoration', 'Aesthetic appreciation', 'Amusemen
                   'Consequences', 'Danger', 'Self Involvement', 'Self Consistency', 'Relationship', 'Influence',
                   'Agent vs.Situation', 'Attention', 'Safety', 'Approach', 'Arousal', 'Commitment', 'Dominance',
                   'Effort', 'Fairness', 'Identity', 'Upswing']
+PREDICTED_SENTIMENTS = ["Contentment","Sadness","Joy","Excitement","Pleasure","Satisfaction"]
