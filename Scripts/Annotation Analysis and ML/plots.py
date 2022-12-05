@@ -34,14 +34,14 @@ def plot_predictions(predictions_path, results_dir):
     sns.despine(left=True, bottom=True)
     fig.suptitle('')
     i = 0
-    for a in ax.ravel():
-        l1 = a.plot(y_val, label="labels")[0]
-        l3 = a.plot(y_bl, label='base line')[0]
-        l2 = a.plot(df[models[i]], label=models[i])
+    # for a in ax.ravel():
+    l1 = ax.plot(y_val, label="labels")[0]
+    l3 = ax.plot(y_bl, label='base line')[0]
+    l2 = ax.plot(df[models[i]], label=models[i])
 
-        a.set_ylim([0, 8])
-        a.set_title(f'{models[i]}')
-        i += 1
+    ax.set_ylim([0, 8])
+    ax.set_title(f'{models[i]}')
+    i += 1
 
     fig.legend([l1, l3, l2],
                labels=['label', 'base line', 'model'],

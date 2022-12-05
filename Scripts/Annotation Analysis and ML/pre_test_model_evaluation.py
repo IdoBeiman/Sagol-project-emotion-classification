@@ -14,9 +14,9 @@ def get_optimal_model_params(dataset,sent,model_type,opimizer_grid_search=False)
     dataset.drop(sent, axis=1, inplace=True)
     grid_search_df_process(dataset,sent)
     X = dataset.values.reshape(dataset.shape[0], 1, dataset.shape[1])
-    if model_type == 'dense':
+    if model_type == 'SNN':
         compiled_model =KerasRegressor(model= create_model_for_grid_dense,optimizer='adam',initializer='normal', dropout_rate = 0.6,activation="sigmoid", input_shape = X.shape[1:], layer_1_neurons=128, layer_2_neurons=64,optimizer_grid_search=opimizer_grid_search)
-        grid = GridSearchCV(estimator=compiled_model,n_jobs=-1,cv=split_data_using_cross_validation(original_dataset,sent,True), param_grid=param_grid,scoring="neg_root_mean_squared_error",error_score='raise')
+        grid = GridSearchCV(estimator=compiled_model,n_jobs=-1,cv=split_data_using_cross_validation(original_dataset,sent,N_SPLITS,CV_SPLIT_METHOD), param_grid=param_grid,scoring="neg_root_mean_squared_error",error_score='raise')
     elif model_type == 'uniLSTM':
         compiled_model =KerasRegressor(model= create_model_for_grid_uniLSTM,dropout_rate = 0.6, input_shape_dim1 = X.shape[1],input_shape_dim2= X.shape[2])
         grid = GridSearchCV(estimator=compiled_model,n_jobs=-1,cv=split_data_using_cross_validation(original_dataset,sent),scoring="r2", param_grid=param_grid,error_score='raise')
