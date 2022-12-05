@@ -1,15 +1,14 @@
 import os
 
 # **** PATHS ****
-ML_INPUT_DIR = "./Tokenized_data"
-# ML_INPUT_DIR = 'C:\\Users\\Yuli\\Documents\\Uni\\Sagol-project-emotion-classification\\Tokenized_data'
+# ML_INPUT_DIR = "./Tokenized_data"
+ML_INPUT_DIR = 'C:\\Users\\Yuli\\Documents\\Uni\\Sagol-project-emotion-classification\\Tokenized_data'
 
 ROOT = os.path.join(os.getcwd(), "\debug")
 
 # **** CONFIGURATION ****
 
-# MODELS = ["SNN", "uniLSTM", "BiLSTM", "Linear", "Baseline"]
-MODELS = ["SNN","Baseline"]
+MODELS = ["SNN", "Linear", "Baseline"]
 
 N_SPLITS = 3
 CV_SPLIT_METHOD = 'StratifiedKFold'

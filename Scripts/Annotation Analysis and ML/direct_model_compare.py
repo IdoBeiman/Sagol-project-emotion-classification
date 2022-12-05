@@ -23,6 +23,8 @@ class DirectModelCompare:
             # get all csv files from the given folder in constants file
             for file in get_files_from_folder():
 
+                file_eval = pd.DataFrame(columns=MLmodel.get_models_names())
+
                 print_and_log(self.logger, f"Processing {file}")
 
                 run_details = self.extract_details_from_file_name(file)
