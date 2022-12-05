@@ -1,5 +1,6 @@
 {
     "python.analysis.extraPaths": [
-        "./Scripts/Annotation Analysis and ML"
+        "./Scripts/Annotation Analysis and ML",
+        "./Scripts/annotation_analysis"
     ]
 }
