@@ -10,7 +10,7 @@ import numpy as np
 from sklearn import linear_model, metrics
 from math import sqrt
 from keras import backend, metrics
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error, r2_score,mean_absolute_error
 
 
 class MLmodel:
@@ -50,12 +50,12 @@ class MLmodel:
             new_model.add(Dropout(self.d_o))
             new_model.add(Bidirectional(LSTM(self.n2, stateful=True, return_sequences=True, activation=self.ac_func)))
         new_model.add(Dense(1))
-        # opt = keras.optimizers.Adam(learning_rate=0.001)
-        new_model.compile(loss=rmse, optimizer="adam", metrics=[metrics.RootMeanSquaredError()])
+        opt = keras.optimizers.Adam(learning_rate=0.001)
+        new_model.compile(loss=rmse, optimizer=opt, metrics=[metrics.RootMeanSquaredError()])
         return new_model
 
     def fit_NN(self, train_df, sent, show_progress=True):
-        earlystopping = callbacks.EarlyStopping(monitor="loss", mode="min", patience=10, restore_best_weights=True)
+        # earlystopping = callbacks.EarlyStopping(monitor="loss", mode="min", patience=10, restore_best_weights=True)
         X = train_df.drop([sent], axis=1)
         y = train_df[sent]
         X = X.values.reshape(X.shape[0], 1, X.shape[1])
@@ -66,7 +66,7 @@ class MLmodel:
                 model.fit(X, np.asarray(y), epochs=1, batch_size=1, verbose=show_progress, shuffle=False)
                 model.reset_states()
         else:
-            model.fit(X, np.asarray(y), epochs=self.n_epochs, batch_size=1, verbose=show_progress, shuffle=False, callbacks=[earlystopping])
+            model.fit(X, np.asarray(y), epochs=self.n_epochs, batch_size=1, verbose=show_progress, shuffle=False)
         self.model = model
         self.param_num = model.count_params()
 
@@ -85,6 +85,9 @@ class MLmodel:
 
     def calculate_r_square(self, y):
         return r2_score(y, self.predictions)
+        
+    def calculate_mae(self, y):
+        return mean_absolute_error(y, self.predictions)
 
     def fit_baseline(self, train_df, sent):
         mode = train_df[sent].mode().loc[0]

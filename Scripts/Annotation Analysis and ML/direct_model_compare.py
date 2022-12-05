@@ -33,9 +33,7 @@ class DirectModelCompare:
                 os.makedirs(current_file_result_dir)
 
                 for s in PREDICTED_SENTIMENTS:
-
                     try:
-
                         current_sent_result_dir = f'{current_file_result_dir}/{s}'
                         os.makedirs(current_sent_result_dir)
 
@@ -46,6 +44,7 @@ class DirectModelCompare:
                         print_and_log(self.logger, f"*************** {s} ***************")
 
                         current_sent_df = process_tokens_df(file, sents=[s])
+                        pre_processed_df=current_sent_df.copy(deep=True)
 
                         # init models
                         MLmodel.models = []
@@ -54,17 +53,17 @@ class DirectModelCompare:
                         for model in MODELS:
 
                             if model == "SNN":
-                                SNN = MLmodel(n1=128,n2=64,d_o=0.6, n_epochs=EPOCH, ac_func="sigmoid",initializer='uniform',model_type='dense', name='SNN')
-                                nn_models.append(SNN)
                                 # grid_params=get_optimal_model_params(pre_processed_df,s,model,opimizer_grid_search=False) # not running grid search since those were found as best
-                                # SNN = MLmodel(n1=128,n2=64,d_o=grid_params["model__dropout_rate"],ac_func=grid_params["model__activation"], weight_constraint=grid_params["model__weight_constraint"],model='dense', name='SNN')
+                                SNN = MLmodel(n1=64,n2=32,d_o=0.8,ac_func="sigmoid",initializer='uniform',model_type='dense', name='SNN')
+                                nn_models.append(SNN)
+                                # SNN = MLmodel(n1=128,n2=64,d_o=grid_params["model__dropout_rate"],ac_func=grid_params["model__activation"],model='dense', name='SNN')
                             elif model == "uniLSTM":
-                                uniLSTM = MLmodel(n1=64,n2=20,d_o=0.5, n_epochs=EPOCH, ac_func="sigmoid",model_type='uniLSTM',name='uLSTM')
+                                uniLSTM = MLmodel(n1=64,n2=20,d_o=0.5,n_epochs=EPOCH,ac_func="sigmoid",model_type='uniLSTM',name='uLSTM')
                                 nn_models.append(uniLSTM)
                                 # grid_params=get_optimal_model_params(pre_processed_df,s,model)
                                 # uniLSTM = MLmodel(n1=32,n2=20,d_o=grid_params.dropout_rate,ac_func=grid_params.activation,model='uniLSTM',name='uLSTM')
                             elif model == "BiLSTM":
-                                BiLSTM = MLmodel(n1=100,n2=100,n3=16,d_o=0.4, n_epochs=EPOCH, ac_func="sigmoid",model_type='BiLSTM',name='BiLSTM')
+                                BiLSTM = MLmodel(n1=64,n2=32,d_o=0.6,n_epochs=EPOCH,ac_func="sigmoid",model_type='BiLSTM',name='BiLSTM')
                                 nn_models.append(BiLSTM)
                                 # BiLSTM = MLmodel(n1=16,n2=16,d_o=grid_params.dropout_rate,ac_func=grid_params.activation,model='BiLSTM',name='BiLSTM')
                             elif model == "Linear":
@@ -78,7 +77,7 @@ class DirectModelCompare:
                         accumulated_data = {}
                         num_iter = get_num_splits(current_sent_df)
                         current_iteration = 0
-
+                        
                         for train_indexes, test_indexes in split_data_using_cross_validation(current_sent_df.copy(deep=True), s):
                             curr_iter_preds = pd.DataFrame()
                             current_iteration += 1
@@ -89,19 +88,19 @@ class DirectModelCompare:
                             current_sent_predictions[f'Real_{str(current_iteration)}_iteration'] = test_split_df[s]
 
                             if 'Linear' in MODELS:
-                                Linear.fit_bayesRidge(train_split_df.copy(deep=True), s)
-                                Linear.predict_bayesRidge(test_split_df.copy(deep=True), s)
+                                Linear.fit_bayesRidge(train_split_df, s)
+                                Linear.predict_bayesRidge(test_split_df, s)
 
                             if 'Baseline' in MODELS:
-                                Baseline.fit_baseline(train_split_df.copy(deep=True), s)
-                                Baseline.predict_baseline(test_split_df.copy(deep=True), s)
+                                Baseline.fit_baseline(train_split_df, s)
+                                Baseline.predict_baseline(test_split_df, s)
 
                             for model in nn_models:
                                 model.fit_NN(train_split_df.copy(deep=True), s)
                                 model.predict_NN(test_split_df.copy(deep=True), s)
 
                             # eval model performance
-                            collect_target_values = np.append(collect_target_values, test_split_df[s].to_numpy())
+                            collect_target_values = np.append(collect_target_values,test_split_df[s].to_numpy())
                             for model in MLmodel.models:
                                 test_split_df_copy = test_split_df.copy(deep=True)
                                 if f'{model.name}_rmse' in accumulated_data.keys():
@@ -114,23 +113,28 @@ class DirectModelCompare:
                                 else:
                                     accumulated_data[f'{model.name}_r_square'] = 0
                                     accumulated_data[f'{model.name}_r_square'] += model.calculate_r_square(test_split_df_copy[s])
+                                if f'{model.name}_mae' in accumulated_data.keys():
+                                    accumulated_data[f'{model.name}_mae'] += model.calculate_mae(test_split_df_copy[s])
+                                else:
+                                    accumulated_data[f'{model.name}_mae'] = 0
+                                    accumulated_data[f'{model.name}_mae'] += model.calculate_mae(test_split_df_copy[s])
+                                
                                 curr_iter_preds[f'{model.name}'] = pd.Series(model.predictions)
                                 current_sent_predictions[f'{model.name}_iteration_{str(current_iteration)}'] = pd.Series(model.predictions)
-                            concatenated_preds = pd.concat([concatenated_preds, curr_iter_preds], ignore_index=True)
-                            # concatenated_preds.dropna(inplace=True)
-
+                            concatenated_preds = pd.concat([concatenated_preds, curr_iter_preds],ignore_index=True)
+                        concatenated_preds_path = f"{current_sent_result_dir}/{run_details}_{s}_concatenated_model_predictions.csv"
+                        concatenated_preds.to_csv(concatenated_preds_path) 
                         for model in MLmodel.models:
                         # after we finished the cross validation iterations we will divide the accumlated error
                         # by the number of iterations
                             row[f'{model.name}_avg__rmse'] = accumulated_data[f'{model.name}_rmse'] / num_iter
+                            row[f'{model.name}_avg__mae'] = accumulated_data[f'{model.name}_mae'] / num_iter
                             row[f'{model.name}_avg_r_square'] = accumulated_data[f'{model.name}_r_square'] / num_iter
                             concatenated_preds['Target'] = pd.Series(collect_target_values)
-                            concatenated_preds[f'{model.name}_all_rmse'] = calculate_rmse_error(concatenated_preds["Target"], concatenated_preds[f'{model.name}'])
-                            row[f'{model.name}_all_pearson_correl'] = calculate_pearson_correl(concatenated_preds["Target"], concatenated_preds[f'{model.name}'])
-                            row[f'{model.name}_all_r_2_correl'] = calculate_r2_correl( concatenated_preds["Target"], concatenated_preds[f'{model.name}'])
-                            # row[f'{model.name}_num_samples'] = len(current_sent_df)
-
-                        file_eval = model_eval.append(row, ignore_index=True)
+                            concatenated_preds[f'{model.name}_all_rmse'] = calculate_rmse_error( concatenated_preds["Target"] , concatenated_preds[f'{model.name}'])
+                            row[f'{model.name}_all_pearson_correl'] = calculate_pearson_correl( concatenated_preds["Target"] , concatenated_preds[f'{model.name}'])
+                            row[f'{model.name}_all_r_2_correl'] = calculate_r2_correl( concatenated_preds["Target"] , concatenated_preds[f'{model.name}'])
+                            row[f'{model.name}_num_samples'] =len(current_sent_df)
                         model_eval = model_eval.append(row, ignore_index=True)
 
                         concatenated_preds_path = f"{current_sent_result_dir}/{run_details}_{s}_concatenated_model_predictions.csv"
@@ -138,11 +142,9 @@ class DirectModelCompare:
                         predictions_file_name = f"{current_sent_result_dir}/{run_details}_{s}_model_predictions.csv"
                         current_sent_predictions.to_csv(predictions_file_name, mode='w', header=True)
                         plot_predictions(predictions_file_name, current_sent_result_dir)
-                        file_eval.to_csv(f'{current_file_result_dir}/file_eval.csv')
-
-                    except Exception:
+                    except Exception as e:
+                        print_and_log(self.logger,f"emotion {s} failed")
                         pass
-
             model_eval_file_name = f"{self.result_dir}/all_files_models_comparison.csv"
             model_eval.to_csv(model_eval_file_name, mode='w', header=True)
             plot_model_comparison(model_eval_file_name, self.result_dir)
