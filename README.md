@@ -20,3 +20,7 @@
 # Running model
  1. Use direct_model_compare.py to run the model and constants.py to configure it.
  2. Output will be saved in destination_folder.
+
+# Optionals
+1. Grid search for finding optinal hyperparameters can be done using get_optimal_model_params in grid_search.py
+2. Pretrained nodel can be  
